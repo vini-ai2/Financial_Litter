@@ -1,0 +1,175 @@
+// This is your shared contract.
+// Both tracks import generated types from this file — nobody hand-writes
+// duplicate TypeScript interfaces. Changes to this file require both
+// teammates' sign-off on the PR (enforce via CODEOWNERS).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum AccountType {
+  CHECKING
+  SALARY
+  SAVINGS
+  FD
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum LoanType {
+  HOME
+  AUTO
+  GOLD
+  PERSONAL
+}
+
+enum InvestmentCategory {
+  EQUITY_LARGE
+  EQUITY_MID
+  EQUITY_SMALL
+  FIXED_INCOME
+  ETF
+  MUTUAL_FUND
+}
+
+enum Recurrence {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+// ---------- Models ----------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     Session[]
+  accounts     Account[]
+  loans        Loan[]
+  investments  Investment[]
+  bills        Bill[]
+  budgets      Budget[]
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  refreshTokenHash String
+  userAgent        String?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+
+  @@index([userId])
+}
+
+model Account {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  name      String
+  type      AccountType
+  balance   Decimal
+  createdAt DateTime    @default(now())
+
+  transactions Transaction[]
+  investments  Investment[]
+  bills        Bill[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  accountId   String
+  account     Account         @relation(fields: [accountId], references: [id])
+  amount      Decimal
+  type        TransactionType
+  category    String
+  description String?
+  date        DateTime
+  createdAt   DateTime        @default(now())
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model Loan {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  type         LoanType
+  principal    Decimal
+  interestRate Decimal
+  tenureMonths Int
+  emiAmount    Decimal
+  outstanding  Decimal
+  startDate    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Investment {
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id])
+  accountId      String?
+  account        Account?           @relation(fields: [accountId], references: [id])
+  category       InvestmentCategory
+  name           String
+  investedAmount Decimal
+  currentValue   Decimal
+  purchaseDate   DateTime
+  createdAt      DateTime           @default(now())
+
+  @@index([userId])
+}
+
+model Bill {
+  id         String     @id @default(uuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  accountId  String?
+  account    Account?   @relation(fields: [accountId], references: [id])
+  name       String
+  amount     Decimal
+  category   String
+  dueDate    DateTime
+  recurrence Recurrence
+  isPaid     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  @@index([userId])
+  @@index([dueDate])
+}
+
+model Budget {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  goalName      String
+  targetAmount  Decimal
+  currentAmount Decimal  @default(0)
+  targetDate    DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
