@@ -9,7 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  
 }
 
 // ---------- Enums ----------
@@ -90,8 +90,6 @@ model Account {
   createdAt DateTime    @default(now())
 
   transactions Transaction[]
-  investments  Investment[]
-  bills        Bill[]
 
   @@index([userId])
 }
@@ -103,7 +101,6 @@ model Transaction {
   amount      Decimal
   type        TransactionType
   category    String
-  description String?
   date        DateTime
   createdAt   DateTime        @default(now())
 
@@ -131,8 +128,6 @@ model Investment {
   id             String             @id @default(uuid())
   userId         String
   user           User               @relation(fields: [userId], references: [id])
-  accountId      String?
-  account        Account?           @relation(fields: [accountId], references: [id])
   category       InvestmentCategory
   name           String
   investedAmount Decimal
@@ -147,8 +142,6 @@ model Bill {
   id         String     @id @default(uuid())
   userId     String
   user       User       @relation(fields: [userId], references: [id])
-  accountId  String?
-  account    Account?   @relation(fields: [accountId], references: [id])
   name       String
   amount     Decimal
   category   String

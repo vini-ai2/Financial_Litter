@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "@prisma/client": "^7.9.0",
+    "prisma": "^7.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  },
+  "name": "financial_litter",
+  "version": "1.0.0",
+  "description": "1. Monthly Income\r 2. Net Worth\r 3. Monthly Expenses\r 4. Loans\r 5. Savings Rate\r 6. Investments (for basic - we could show just P&L) -- To Be Expanded\r 7. Upcoming Bills (Water, electricity, etc.)\r 8. Credit Score",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vini-ai2/Financial_Litter.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vini-ai2/Financial_Litter/issues"
+  },
+  "homepage": "https://github.com/vini-ai2/Financial_Litter#readme"
+}
