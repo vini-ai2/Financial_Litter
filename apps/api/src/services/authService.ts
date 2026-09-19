@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";  //hashing library for securely storing passwords
 import prisma from "../lib/prisma";
 import { SignupInput, LoginInput } from "../utils/validation";
+import {generateToken} from "../utils/jwt";
 
 export const ping = async () => {
     return "Auth service is working!";
@@ -55,7 +56,9 @@ export const login = async (data: LoginInput)=>{
 if(!isPasswordValid){
     throw new Error("Invalid Email or password");
 }
+const token = generateToken(user.id);
 return{
-    message: "Login succesfull"
+    message: "Login succesfull",
+    token
 };
 };
