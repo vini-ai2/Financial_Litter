@@ -1,10 +1,19 @@
 import express from "express";
 import authRoutes from "./routes/auth";
+import incomeSourcesRouter from './routes/incomeSources'
+import accountRoutes from "./routes/accounts";
+import transactionRoutes from "./routes/transactions";
+
 
 const app = express();
 
 app.use(express.json()); //middleware to parse JSON request bodies
 app.use("/auth", authRoutes);
+app.use("/income-sources", incomeSourcesRouter);
+app.use("/accounts", accountRoutes);
+app.use("/transactions", transactionRoutes);
+
+
 
 app.get("/", (req, res) => {
     res.send("Financial Litter API is running!");
