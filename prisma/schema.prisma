@@ -100,13 +100,14 @@ enum IncomeFrequency {
 
 model Session {
   id               String   @id @default(uuid())
-  userId           String
+  userId          String
   user             User     @relation(fields: [userId], references: [id])
   refreshTokenHash String
   userAgent        String?
   createdAt        DateTime @default(now())
   expiresAt        DateTime
 
+  @@unique([refreshTokenHash])
   @@index([userId])
 }
 

@@ -3,11 +3,13 @@ import authRoutes from "./routes/auth";
 import incomeSourcesRouter from './routes/incomeSources'
 import accountRoutes from "./routes/accounts";
 import transactionRoutes from "./routes/transactions";
+import cookieParser from "cookie-parser";
 
 
 const app = express();
 
 app.use(express.json()); //middleware to parse JSON request bodies
+app.use(cookieParser());
 app.use("/auth", authRoutes);
 app.use("/income-sources", incomeSourcesRouter);
 app.use("/accounts", accountRoutes);
