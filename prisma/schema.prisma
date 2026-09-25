@@ -9,7 +9,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 // ---------- Enums ----------
@@ -60,12 +59,43 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions     Session[]
-  accounts     Account[]
-  loans        Loan[]
-  investments  Investment[]
-  bills        Bill[]
-  budgets      Budget[]
+  sessions      Session[]
+  accounts      Account[]
+  loans         Loan[]
+  investments   Investment[]
+  bills         Bill[]
+  budgets       Budget[]
+  incomeSources IncomeSource[]
+}
+
+model IncomeSource {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  name           String
+  type           IncomeSourceType
+  amount         Decimal
+  frequency      IncomeFrequency
+  effectiveFrom  DateTime
+  effectiveUntil DateTime?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+enum IncomeSourceType {
+  SALARY
+  FREELANCE
+  RENTAL
+  OTHER
+}
+
+enum IncomeFrequency {
+  WEEKLY
+  MONTHLY
+  ANNUAL
 }
 
 model Session {
@@ -95,14 +125,14 @@ model Account {
 }
 
 model Transaction {
-  id          String          @id @default(uuid())
-  accountId   String
-  account     Account         @relation(fields: [accountId], references: [id])
-  amount      Decimal
-  type        TransactionType
-  category    String
-  date        DateTime
-  createdAt   DateTime        @default(now())
+  id        String          @id @default(uuid())
+  accountId String
+  account   Account         @relation(fields: [accountId], references: [id])
+  amount    Decimal
+  type      TransactionType
+  category  String
+  date      DateTime
+  createdAt DateTime        @default(now())
 
   @@index([accountId])
   @@index([date])
