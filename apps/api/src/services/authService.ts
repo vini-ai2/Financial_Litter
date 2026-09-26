@@ -83,7 +83,8 @@ export const refresh = async (incomingRefreshToken: string) => {
     const tokenHash = hashToken(incomingRefreshToken);
 
     const session = await prisma.session.findUnique({
-        where: { refreshTokenHash: tokenHash }
+        where : {
+             refreshTokenHash: tokenHash }
     });
 
     if (!session) throw new Error("Invalid refresh token");

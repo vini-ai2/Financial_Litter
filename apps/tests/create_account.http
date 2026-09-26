@@ -1,0 +1,8 @@
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "HDFC Savings",
+  "type": "SAVINGS",
+  "balance": 50000
+}
