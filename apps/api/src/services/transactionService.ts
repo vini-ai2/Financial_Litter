@@ -6,6 +6,7 @@ export type CreateTransactionInput = {
   amount: number;
   type: "INCOME" | "EXPENSE";
   category: string;
+  description: string;
   date: string;
 };
 
@@ -13,6 +14,7 @@ export type UpdateTransactionInput = {
   amount?: number;
   type?: "INCOME" | "EXPENSE";
   category?: string;
+  description?: string;
   date?: string;
 };
 
@@ -61,7 +63,9 @@ export async function createTransaction(
           amount,
           type: data.type,
           category: data.category,
+          description: data.description,
           date: new Date(data.date),
+          
         },
       });
 
@@ -226,6 +230,10 @@ export async function updateTransaction(
           ...(data.type !== undefined && {
             type: data.type,
           }),
+
+          ...(data.description !== undefined && {
+  description: data.description,
+}),
 
           ...(data.category !== undefined && {
             category: data.category,

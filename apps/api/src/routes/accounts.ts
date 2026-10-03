@@ -8,11 +8,11 @@ import {
   deleteAccountController,
 } from "../controllers/accountController";
 
-import { mockAuthGuard } from "../middleware/mockAuthGuard";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = Router();
 
-router.use(mockAuthGuard);
+router.use(authenticate);
 
 router.post("/", createAccountController);
 

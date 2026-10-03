@@ -8,11 +8,11 @@ import {
   deleteIncomeSourceController,
 } from "../controllers/incomeSourceController";
 
-import { mockAuthGuard } from "../middleware/mockAuthGuard";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = Router();
 
-router.use(mockAuthGuard);
+router.use(authenticate);
 
 router.post("/", createIncomeSourceController);
 

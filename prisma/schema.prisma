@@ -125,14 +125,15 @@ model Account {
 }
 
 model Transaction {
-  id        String          @id @default(uuid())
-  accountId String
-  account   Account         @relation(fields: [accountId], references: [id])
-  amount    Decimal
-  type      TransactionType
-  category  String
-  date      DateTime
-  createdAt DateTime        @default(now())
+  id          String          @id @default(uuid())
+  accountId   String
+  account     Account         @relation(fields: [accountId], references: [id])
+  amount      Decimal
+  type        TransactionType
+  category    String
+  description String @default("")
+  date        DateTime
+  createdAt   DateTime        @default(now())
 
   @@index([accountId])
   @@index([date])

@@ -77,29 +77,18 @@ export const updateAccountSchema = z.object({
   ]).optional(),
 });
 export const createTransactionSchema = z.object({
-  accountId: z.string().uuid(),
-
-  amount: z.number().positive(),
-
-  type: z.enum([
-    "INCOME",
-    "EXPENSE",
-  ]),
-
-  category: z.string().min(1).max(100),
-
-  date: z.string().datetime(),
+    accountId: z.string().uuid(),
+    amount: z.number().positive(),
+    type: z.enum(["INCOME", "EXPENSE"]),
+    category: z.string().min(1).max(100),
+    description: z.string().min(1).max(255),
+    date: z.string().datetime(),
 });
 
 export const updateTransactionSchema = z.object({
-  amount: z.number().positive().optional(),
-
-  type: z.enum([
-    "INCOME",
-    "EXPENSE",
-  ]).optional(),
-
-  category: z.string().min(1).max(100).optional(),
-
-  date: z.string().datetime().optional(),
+    amount: z.number().positive().optional(),
+    type: z.enum(["INCOME", "EXPENSE"]).optional(),
+    category: z.string().min(1).max(100).optional(),
+    description: z.string().min(1).max(255).optional(),
+    date: z.string().datetime().optional(),
 });
