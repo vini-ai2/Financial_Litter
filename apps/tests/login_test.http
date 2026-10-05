@@ -1,7 +1,82 @@
-POST http://localhost:3000/auth/login
+@baseUrl = http://localhost:3000
+
+### 1. Signup
+POST {{baseUrl}}/auth/signup
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "password": "TestPassword123"
+  "email": "keerthi@test.com",
+  "password": "testpass123",
+  "firstName": "Keerthi",
+  "lastName": "Test",
+  "phone": "+919876543210"
 }
+
+### 2. Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "keerthi@test.com",
+  "password": "testpass123"
+}
+
+### 3. Protected route
+@accessToken = {{login.response.body.accessToken}}
+
+GET {{baseUrl}}/auth/protected
+Authorization: Bearer {{accessToken}}
+
+### 4. Create account
+# @name createAccount
+@accessToken = {{login.response.body.accessToken}}
+
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "HDFC Savings",
+  "type": "SAVINGS",
+  "balance": 50000
+}
+
+### 5. Create income source
+@accessToken = {{login.response.body.accessToken}}
+
+POST {{baseUrl}}/income-sources
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Salary",
+  "type": "SALARY",
+  "amount": 60000,
+  "frequency": "MONTHLY",
+  "effectiveFrom": "2026-01-01T00:00:00.000Z",
+  "isActive": true
+}
+
+### 6. Create transaction
+@accessToken = {{login.response.body.accessToken}}
+@accountId = {{createAccount.response.body.id}}
+
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "accountId": "{{accountId}}",
+  "amount": 5000,
+  "type": "EXPENSE",
+  "category": "Food",
+  "date": "2026-09-26T00:00:00.000Z"
+}
+
+#do it here
+### Get accounts (copy the id from response)
+@accessToken = {{login.response.body.accessToken}}
+
+GET http://localhost:3000/accounts
+Authorization: Bearer {{accessToken}}

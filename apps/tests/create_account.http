@@ -1,3 +1,8 @@
+### ── Token auto-extracted from login response ──
+@accessToken = {{login.response.body.accessToken}}
+
+### 3. Create account
+POST http://localhost:3000/accounts
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 

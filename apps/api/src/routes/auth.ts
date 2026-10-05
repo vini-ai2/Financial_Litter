@@ -1,4 +1,4 @@
-// src/routes/auth.ts
+
 import { Router } from "express";
 import { ping, signup, login, refreshToken, logout } from "../controllers/authController";
 import { authenticate } from "../middleware/authMiddleware";
