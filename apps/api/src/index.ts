@@ -3,6 +3,7 @@ import authRoutes from "./routes/auth";
 import incomeSourcesRouter from './routes/incomeSources'
 import accountRoutes from "./routes/accounts";
 import transactionRoutes from "./routes/transactions";
+import financeRoutes from "./routes/finance";
 import cookieParser from "cookie-parser";
 import cors from 'cors'
 
@@ -19,6 +20,7 @@ app.use("/auth", authRoutes);
 app.use("/income-sources", incomeSourcesRouter);
 app.use("/accounts", accountRoutes);
 app.use("/transactions", transactionRoutes);
+app.use("/finance", financeRoutes);
 
 
 
