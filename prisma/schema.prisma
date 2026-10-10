@@ -1,8 +1,3 @@
-// This is your shared contract.
-// Both tracks import generated types from this file — nobody hand-writes
-// duplicate TypeScript interfaces. Changes to this file require both
-// teammates' sign-off on the PR (enforce via CODEOWNERS).
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,7 +6,156 @@ datasource db {
   provider = "postgresql"
 }
 
-// ---------- Enums ----------
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String
+  creditScore   Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  accounts      Account[]
+  bills         Bill[]
+  budgets       Budget[]
+  incomeSources IncomeSource[]
+  investments   Investment[]
+  loans         Loan[]
+  monthlySnapshots MonthlySnapshot[]
+  sessions      Session[]
+}
+
+model MonthlySnapshot {
+  id               String   @id @default(cuid())
+  userId           String
+  year             Int
+  month            Int
+  totalAssets      Decimal
+  totalLiabilities Decimal
+  netWorth         Decimal
+  capturedAt       DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, year, month])
+  @@index([userId, capturedAt])
+}
+
+model IncomeSource {
+  id             String           @id @default(uuid())
+  userId         String
+  name           String
+  type           IncomeSourceType
+  amount         Decimal
+  frequency      IncomeFrequency
+  effectiveFrom  DateTime
+  effectiveUntil DateTime?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  refreshTokenHash String   @unique
+  userAgent        String?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  userId       String
+  name         String
+  type         AccountType
+  balance      Decimal
+  createdAt    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  accountId   String
+  amount      Decimal
+  type        TransactionType
+  category    String
+  date        DateTime
+  createdAt   DateTime        @default(now())
+  description String          @default("")
+  account     Account         @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model Loan {
+  id           String   @id @default(uuid())
+  userId       String
+  type         LoanType
+  principal    Decimal
+  interestRate Decimal
+  tenureMonths Int
+  emiAmount    Decimal
+  outstanding  Decimal
+  startDate    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Investment {
+  id             String             @id @default(uuid())
+  userId         String
+  category       InvestmentCategory
+  name           String
+  investedAmount Decimal
+  currentValue   Decimal
+  purchaseDate   DateTime
+  createdAt      DateTime           @default(now())
+  user           User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Bill {
+  id         String     @id @default(uuid())
+  userId     String
+  name       String
+  amount     Decimal
+  category   String
+  dueDate    DateTime
+  recurrence Recurrence
+  isPaid     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([dueDate])
+}
+
+model Budget {
+  id            String   @id @default(uuid())
+  userId        String
+  goalName      String
+  targetAmount  Decimal
+  currentAmount Decimal  @default(0)
+  targetDate    DateTime
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
 
 enum AccountType {
   CHECKING
@@ -47,44 +191,6 @@ enum Recurrence {
   ANNUAL
 }
 
-// ---------- Models ----------
-
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  firstName    String
-  lastName     String
-  phone        String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  sessions      Session[]
-  accounts      Account[]
-  loans         Loan[]
-  investments   Investment[]
-  bills         Bill[]
-  budgets       Budget[]
-  incomeSources IncomeSource[]
-}
-
-model IncomeSource {
-  id             String           @id @default(uuid())
-  userId         String
-  user           User             @relation(fields: [userId], references: [id])
-  name           String
-  type           IncomeSourceType
-  amount         Decimal
-  frequency      IncomeFrequency
-  effectiveFrom  DateTime
-  effectiveUntil DateTime?
-  isActive       Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-
-  @@index([userId])
-}
-
 enum IncomeSourceType {
   SALARY
   FREELANCE
@@ -96,104 +202,4 @@ enum IncomeFrequency {
   WEEKLY
   MONTHLY
   ANNUAL
-}
-
-model Session {
-  id               String   @id @default(uuid())
-  userId          String
-  user             User     @relation(fields: [userId], references: [id])
-  refreshTokenHash String   @unique
-  userAgent        String?
-  createdAt        DateTime @default(now())
-  expiresAt        DateTime
-
-  @@index([userId])
-}
-
-model Account {
-  id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  name      String
-  type      AccountType
-  balance   Decimal
-  createdAt DateTime    @default(now())
-
-  transactions Transaction[]
-
-  @@index([userId])
-}
-
-model Transaction {
-  id          String          @id @default(uuid())
-  accountId   String
-  account     Account         @relation(fields: [accountId], references: [id])
-  amount      Decimal
-  type        TransactionType
-  category    String
-  description String @default("")
-  date        DateTime
-  createdAt   DateTime        @default(now())
-
-  @@index([accountId])
-  @@index([date])
-}
-
-model Loan {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  type         LoanType
-  principal    Decimal
-  interestRate Decimal
-  tenureMonths Int
-  emiAmount    Decimal
-  outstanding  Decimal
-  startDate    DateTime
-  createdAt    DateTime @default(now())
-
-  @@index([userId])
-}
-
-model Investment {
-  id             String             @id @default(uuid())
-  userId         String
-  user           User               @relation(fields: [userId], references: [id])
-  category       InvestmentCategory
-  name           String
-  investedAmount Decimal
-  currentValue   Decimal
-  purchaseDate   DateTime
-  createdAt      DateTime           @default(now())
-
-  @@index([userId])
-}
-
-model Bill {
-  id         String     @id @default(uuid())
-  userId     String
-  user       User       @relation(fields: [userId], references: [id])
-  name       String
-  amount     Decimal
-  category   String
-  dueDate    DateTime
-  recurrence Recurrence
-  isPaid     Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-
-  @@index([userId])
-  @@index([dueDate])
-}
-
-model Budget {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  goalName      String
-  targetAmount  Decimal
-  currentAmount Decimal  @default(0)
-  targetDate    DateTime
-  createdAt     DateTime @default(now())
-
-  @@index([userId])
 }
