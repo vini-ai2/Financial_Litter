@@ -1,13 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 
-import { supabase } from "@/integrations/supabase/client";
+import { auth, getAccessToken } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Financial Litter — Money moves fast. Read it faster." },
+      { title: "Financial Litter – Money moves fast. Read it faster." },
       {
         name: "description",
         content:
@@ -28,37 +27,48 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setChecked(true);
-      if (!data.session) {
+    // Try to restore session via refresh token cookie on page load
+    async function checkSession() {
+      const token = getAccessToken();
+      if (token) {
+        // Already have a token in memory (same session)
+        setChecked(true);
+        return;
+      }
+
+      // Try refresh — if the cookie is still valid this silently restores auth
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/auth/refresh`,
+        { method: "POST", credentials: "include" }
+      );
+
+      if (res.ok) {
+        const json = await res.json();
+        // setAccessToken is called inside auth.refresh equivalent
+        // For now just mark as checked — token is in memory via api.ts
+        import("@/lib/api").then(({ setAccessToken }) => {
+          setAccessToken(json.accessToken);
+          setChecked(true);
+        });
+      } else {
+        // No valid session — send to login
         navigate({ to: "/login", replace: true });
       }
-    });
+    }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
-      setSession(nextSession);
-      if (!nextSession) {
-        navigate({ to: "/login", replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    checkSession();
   }, [navigate]);
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    await auth.logout();
     navigate({ to: "/login", replace: true });
   }
 
-  if (!checked || !session) {
+  if (!checked) {
     return (
       <div className="bg-auth-glow flex min-h-screen items-center justify-center">
         <span className="text-sm text-muted-foreground">Loading…</span>
@@ -78,10 +88,7 @@ function Index() {
           You're in.
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Signed in as{" "}
-          <span className="font-medium text-foreground">
-            {session.user.email}
-          </span>
+          You are logged in to Financial Litter.
         </p>
         <button
           onClick={handleSignOut}

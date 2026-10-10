@@ -4,9 +4,14 @@ import incomeSourcesRouter from './routes/incomeSources'
 import accountRoutes from "./routes/accounts";
 import transactionRoutes from "./routes/transactions";
 import cookieParser from "cookie-parser";
+import cors from 'cors'
 
 
 const app = express();
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}))
 
 app.use(express.json()); //middleware to parse JSON request bodies
 app.use(cookieParser());
