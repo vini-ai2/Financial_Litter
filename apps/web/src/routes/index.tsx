@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { auth, getAccessToken } from "@/lib/api";
+import { FinanceDashboard } from "@/components/finance-dashboard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -77,8 +78,9 @@ function Index() {
   }
 
   return (
-    <div className="bg-auth-glow flex min-h-screen items-center justify-center px-6">
-      <div className="glass-card w-full max-w-md rounded-3xl p-8 text-center">
+    <div className="bg-auth-glow min-h-screen px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl space-y-5">
+      <div className="glass-card mx-auto w-full max-w-md rounded-3xl p-8 text-center">
         <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary">
           <span className="font-display text-xl font-extrabold text-primary-foreground">
             F
@@ -102,6 +104,8 @@ function Index() {
             Log in
           </Link>
         </p>
+      </div>
+      <FinanceDashboard />
       </div>
     </div>
   );

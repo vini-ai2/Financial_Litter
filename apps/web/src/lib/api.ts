@@ -113,3 +113,53 @@ async function refreshAccessToken(): Promise<boolean> {
     return false
   }
 }
+
+async function requestJson<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await apiFetch(path, options);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? "The request could not be completed");
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
+
+const send = (method: string, body?: unknown): RequestInit => ({
+  method,
+  ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+});
+
+export const financeApi = {
+  dashboard: () => requestJson<any>("/finance/dashboard"),
+  transactions: (filters: { month?: string; type?: string; category?: string }) => {
+    const query = new URLSearchParams();
+    if (filters.month) query.set("month", filters.month);
+    if (filters.type) query.set("type", filters.type);
+    if (filters.category) query.set("category", filters.category);
+    return requestJson<any[]>(`/transactions?${query.toString()}`);
+  },
+  createAccount: (data: unknown) => requestJson<any>("/accounts", send("POST", data)),
+  updateAccount: (id: string, data: unknown) => requestJson<any>(`/accounts/${id}`, send("PUT", data)),
+  createIncome: (data: unknown) => requestJson<any>("/income-sources", send("POST", data)),
+  deleteIncome: (id: string) => requestJson<void>(`/income-sources/${id}`, send("DELETE")),
+  updateIncome: (id: string, data: unknown) => requestJson<any>(`/income-sources/${id}`, send("PUT", data)),
+  createTransaction: (data: unknown) => requestJson<any>("/transactions", send("POST", data)),
+  updateTransaction: (id: string, data: unknown) => requestJson<any>(`/transactions/${id}`, send("PUT", data)),
+  deleteTransaction: (id: string) => requestJson<void>(`/transactions/${id}`, send("DELETE")),
+  createLoan: (data: unknown) => requestJson<any>("/finance/loans", send("POST", data)),
+  updateLoan: (id: string, data: unknown) => requestJson<any>(`/finance/loans/${id}`, send("PUT", data)),
+  deleteLoan: (id: string) => requestJson<void>(`/finance/loans/${id}`, send("DELETE")),
+  createBudget: (data: unknown) => requestJson<any>("/finance/budgets", send("POST", data)),
+  updateBudget: (id: string, data: unknown) => requestJson<any>(`/finance/budgets/${id}`, send("PUT", data)),
+  deleteBudget: (id: string) => requestJson<void>(`/finance/budgets/${id}`, send("DELETE")),
+  createBill: (data: unknown) => requestJson<any>("/finance/bills", send("POST", data)),
+  updateBill: (id: string, data: unknown) => requestJson<any>(`/finance/bills/${id}`, send("PUT", data)),
+  deleteBill: (id: string) => requestJson<void>(`/finance/bills/${id}`, send("DELETE")),
+  setCreditScore: (score: number) => requestJson<{ score: number }>("/finance/credit-score", send("PUT", { score })),
+};
+
+export const auth = {
+  signup: (data: { email: string; password: string; firstName: string; lastName: string; phone: string }) => apiSignup(data),
+  login: (email: string, password: string) => apiLogin({ email, password }),
+  logout: () => apiLogout(),
+};
