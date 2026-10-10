@@ -75,6 +75,7 @@ export const updateAccountSchema = z.object({
     "SAVINGS",
     "FD",
   ]).optional(),
+  balance: z.number().optional(),
 });
 export const createTransactionSchema = z.object({
     accountId: z.string().uuid(),

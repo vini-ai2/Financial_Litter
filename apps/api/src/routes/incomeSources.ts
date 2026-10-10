@@ -6,7 +6,7 @@ import {
   getIncomeSourceController,
   updateIncomeSourceController,
   deleteIncomeSourceController,
-} from "../controllers/incomeSourceController";
+} from "../controllers/income-source-controller";
 
 import { authenticate } from "../middleware/authMiddleware";
 

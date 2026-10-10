@@ -10,6 +10,7 @@ export type CreateAccountInput = {
 export type UpdateAccountInput = {
   name?: string;
   type?: "CHECKING" | "SALARY" | "SAVINGS" | "FD";
+  balance?: number;
 };
 
 export async function createAccount(
@@ -76,6 +77,9 @@ export async function updateAccount(
 
       ...(data.type !== undefined && {
         type: data.type,
+      }),
+      ...(data.balance !== undefined && {
+        balance: new Prisma.Decimal(data.balance),
       }),
     },
   });
