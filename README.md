@@ -1,37 +1,51 @@
-# What we plan on building 
+# Finlitter — Personal Finance Management Platform
 
-### What do I consider for the basic features?
-1. Monthly Income
-2. Net Worth
-3. Monthly Expenses
-4. Loans
-5. Savings Rate
-6. Investments (for basic - we could show just P&L) -- To Be Expanded
-7. Upcoming Bills (Water, electricity, etc.)
-8. Credit Score
+Finlitter is a personal finance management platform designed to help users understand their financial position, track money movement, plan savings goals, and explore potential investment outcomes.
 
+The project combines financial planning tools with backend engineering and security-focused design.
 
-### Intermediate
-1. Expense tracking 
-2. Budget Planner
-    i) Goal Based (If I want to reach xxxx INR, how do i do that?)
-        a) Zerodha Varsity type of finanacial literacy training/resources? 
-    ii) Financial Health Score - just a metric for user's reference
-3. Investment Simulator (playing moneyy)
-4. Bill and Subscription Management
-5. Financial News 
-6. Calculators - SIP/EMI/CI/FD
-7. an interface to a secure financial doc saving app?
-8. Fraud or Scam detection - but when?
-9. 
+## Core Features
 
-### High
-1. OFI Engine in Rust
-2. 
+### Financial Planning
+- **Income and Expense Tracking:** Organize income sources and transactions.
+- **Net Worth Tracking:** Calculate net worth from assets and liabilities.
+- **Budget Planning:** Plan savings toward financial goals.
+- **Financial Calculators:** Calculate SIP returns, loan EMIs, compound interest, and fixed deposit maturity.
+- **Investment Simulation:** Explore potential portfolio outcomes across equity, debt, and gold allocations using Monte Carlo simulation.
 
 ### Security
-1. Auth 
-2. Profiles
-3. E2E 
+- Password hashing using Argon2id.
+- JWT-based authentication with refresh-token rotation.
+- Field-level encryption for sensitive financial data using AES-256-GCM.
+- Per-user encryption key derivation using HKDF.
+- Rate limiting and refresh-token revocation.
 
+*Security features are documented as design goals; implementation and testing status should be verified before describing them as production-ready.*
 
+## Technology Stack
+
+- **Backend:** Node.js, Express
+- **Database and ORM:** PostgreSQL, Prisma
+- **Frontend:** React
+- **Validation:** Zod
+- **Authentication and security:** JWT, Argon2id, AES-256-GCM, HKDF
+
+## Investment Simulator
+
+The investment simulator is intended to help users explore how portfolio allocation and investment assumptions influence possible outcomes.
+
+The planned implementation runs 1,000 simulation paths and reports the 10th, 50th, and 90th percentile portfolio values. These outputs represent simulated scenarios, not guaranteed returns or financial advice.
+
+## Project Status
+
+Finlitter is under active development. Features are being implemented and integrated incrementally.
+
+Planned functionality may change as development and testing progress.
+
+## Getting Started
+
+The setup instructions will be added once the current database configuration, environment variables, and frontend/backend startup commands have been verified.
+
+## Disclaimer
+
+Finlitter is an educational and personal finance project. Its calculations and investment simulations are not financial advice and should not be treated as guarantees of future performance.
