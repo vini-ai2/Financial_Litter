@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { financeApi } from "@/lib/api";
+import { InvestmentSimulator } from "@/components/investment-simulator";
 
 type Dashboard = any;
 const input = "field-input";
@@ -67,6 +68,7 @@ export function FinanceDashboard() {
   return <div className="space-y-5">
     <div className="flex flex-wrap items-end justify-between gap-3 px-1"><div><p className="field-label">Your money, in one place</p><h2 className="font-display mt-1 text-2xl font-bold">Finance overview</h2><p className="mt-1 text-sm text-muted-foreground">{data.user.firstName ? `Welcome, ${data.user.firstName}. ` : ""}{new Date(`${data.month}-01`).toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</p></div><button className={subtleButton} onClick={()=>{setLoading(true);void load();}}>Refresh</button></div>
     {error && <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
+    <InvestmentSimulator />
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label,value,sub])=><div key={label} className="glass-card rounded-2xl p-4"><p className="field-label">{label}</p><p className="font-display mt-2 text-2xl font-bold">{value}</p><p className="mt-1 text-xs text-muted-foreground">{sub}</p></div>)}</div>
     <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
       <Panel title="Accounts and assets" detail={`${rupees(o.assets)} total assets · cash balances and investment values`}>

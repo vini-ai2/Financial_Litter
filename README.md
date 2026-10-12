@@ -4,6 +4,16 @@ Finlitter is a personal finance management platform designed to help users under
 
 The project combines financial planning tools with backend engineering and security-focused design.
 
+## Demo
+
+Watch the Finlitter demo: [finlitter.mp4](./finlitter.mp4)
+
+<!-- Keep finlitter.mp4 in the same directory as this Markdown file. -->
+<video src="./finlitter.mp4" controls width="100%">
+  Your browser does not support embedded video. You can
+  [open the Finlitter demo](./finlitter.mp4) instead.
+</video>
+
 ## Core Features
 
 ### Financial Planning
@@ -32,13 +42,13 @@ The project combines financial planning tools with backend engineering and secur
 
 ## Investment Simulator
 
-The investment simulator is intended to help users explore how portfolio allocation and investment assumptions influence possible outcomes.
+The dashboard includes an interactive, client-side Monte Carlo simulator with allocation sliders, investment horizon, and monthly SIP inputs. Changing an allocation preserves a 100% total. The simulator runs 1,000 monthly paths and shows P10, P50, and P90 values at each year-end, with the P10–P90 range and P50 median on an area chart.
 
-The planned implementation runs 1,000 simulation paths and reports the 10th, 50th, and 90th percentile portfolio values. These outputs represent simulated scenarios, not guaranteed returns or financial advice.
+MVP annual assumptions are equity 12% CAGR / 15% volatility, debt 7% / 3%, and gold 8% / 10%. Returns are sampled monthly with a lognormal model; SIP contributions are added at month-end. These are fixed illustrative assumptions, not live historical estimates. Results are simulated scenarios, not guarantees or financial advice.
 
 ## Project Status
 
-Finlitter is under active development. Features are being implemented and integrated incrementally.
+Finlitter is under active development. The investment simulator MVP is implemented in the web dashboard, and the web production build passes locally. GitHub Actions now installs the web app dependencies and builds the app for pull requests and pushes to `main`.
 
 Planned functionality may change as development and testing progress.
 

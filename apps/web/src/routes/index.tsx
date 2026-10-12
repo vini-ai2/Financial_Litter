@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { auth, getAccessToken } from "@/lib/api";
+import { auth, getAccessToken, setAccessToken } from "@/lib/api";
 import { FinanceDashboard } from "@/components/finance-dashboard";
 
 export const Route = createFileRoute("/")({
@@ -28,51 +28,97 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const navigate = useNavigate();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    // Try to restore session via refresh token cookie on page load
+    let active = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+
     async function checkSession() {
-      const token = getAccessToken();
-      if (token) {
-        // Already have a token in memory (same session)
-        setChecked(true);
-        return;
-      }
+      try {
+        const token = getAccessToken();
+        if (token) {
+          if (active) setChecked(true);
+          return;
+        }
 
-      // Try refresh — if the cookie is still valid this silently restores auth
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/auth/refresh`,
-        { method: "POST", credentials: "include" }
-      );
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/auth/refresh`,
+          { method: "POST", credentials: "include", signal: controller.signal }
+        );
 
-      if (res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          if (active) void navigate({ to: "/login", replace: true });
+          return;
+        }
+        if (!res.ok) {
+          throw new Error(`The API returned ${res.status}.`);
+        }
+
         const json = await res.json();
-        // setAccessToken is called inside auth.refresh equivalent
-        // For now just mark as checked — token is in memory via api.ts
-        import("@/lib/api").then(({ setAccessToken }) => {
-          setAccessToken(json.accessToken);
-          setChecked(true);
-        });
-      } else {
-        // No valid session — send to login
-        navigate({ to: "/login", replace: true });
+        if (typeof json.accessToken !== "string" || !json.accessToken) {
+          throw new Error("The API response did not include an access token.");
+        }
+        setAccessToken(json.accessToken);
+        if (active) setChecked(true);
+      } catch (error) {
+        if (!active) return;
+        setSessionError(
+          error instanceof DOMException && error.name === "AbortError"
+            ? "The API did not respond within 8 seconds. Make sure the backend is running on port 3000, then retry."
+            : error instanceof TypeError
+              ? "Could not connect to the API. Make sure the backend is running on port 3000, then retry."
+              : error instanceof Error
+                ? error.message
+                : "Could not check your session. Please retry."
+        );
+        setChecked(true);
+      } finally {
+        window.clearTimeout(timeout);
       }
     }
 
-    checkSession();
-  }, [navigate]);
+    void checkSession();
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [navigate, retryCount]);
 
   async function handleSignOut() {
     await auth.logout();
     navigate({ to: "/login", replace: true });
   }
 
-  if (!checked) {
+  if (!checked && !sessionError) {
     return (
       <div className="bg-auth-glow flex min-h-screen items-center justify-center">
         <span className="text-sm text-muted-foreground">Loading…</span>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="bg-auth-glow flex min-h-screen items-center justify-center px-4">
+        <div className="glass-card w-full max-w-md rounded-3xl p-8 text-center">
+          <h1 className="font-display text-xl font-bold">Can’t reach the finance service</h1>
+          <p role="alert" className="mt-3 text-sm text-muted-foreground">{sessionError}</p>
+          <button
+            className="mt-6 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            onClick={() => {
+              setChecked(false);
+              setSessionError(null);
+              setRetryCount((count) => count + 1);
+            }}
+          >
+            Retry connection
+          </button>
+        </div>
       </div>
     );
   }
