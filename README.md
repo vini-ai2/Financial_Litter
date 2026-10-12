@@ -41,6 +41,79 @@ https://github.com/user-attachments/assets/b69cd489-8525-4e34-8d3b-eabd2e016c64
 - **Validation:** Zod
 - **Authentication and security:** JWT, Argon2id, AES-256-GCM, HKDF
 
+## System Architecture
+
+Finlitter is a browser-based React application backed by an Express API and PostgreSQL. The diagram shows the current request path, including the separate in-browser investment simulation and the web build workflow.
+
+```mermaid
+flowchart LR
+  subgraph Browser["WEB CLIENT · apps/web"]
+    direction TB
+    UI["React interface<br/>TanStack Start · Vite · Tailwind"]
+    Pages["Routes and views<br/>Login · Signup · Finance dashboard"]
+    Sim["Investment simulator<br/>Client-side · 1,000 paths · Recharts"]
+    ClientAPI["API client<br/>fetch · bearer access token · refresh cookie"]
+    UI --> Pages
+    Pages --> ClientAPI
+    Pages --> Sim
+  end
+
+  subgraph Server["APPLICATION API · apps/api"]
+    direction TB
+    Http["Express HTTP layer<br/>JSON · CORS · cookies"]
+    Auth["Authentication routes<br/>Signup · Login · Refresh · Logout"]
+    Protected["Protected route groups<br/>Accounts · Income · Transactions · Finance"]
+    Guard["JWT authentication middleware<br/>Verify token · attach userId"]
+    Controllers["Controllers<br/>Request handling and responses"]
+    Services["Services<br/>Business rules · dashboard aggregation"]
+    Prisma["Prisma Client + PostgreSQL adapter"]
+    Http --> Auth
+    Http --> Protected
+    Protected --> Guard --> Controllers --> Services --> Prisma
+    Auth --> Controllers
+  end
+
+  subgraph Persistence["DATA STORE"]
+    DB[("PostgreSQL<br/>Users · sessions · accounts · transactions<br/>income · investments · loans · budgets · bills")]
+  end
+
+  ClientAPI -- "HTTP / JSON<br/>credentials included" --> Http
+  Prisma --> DB
+  subgraph Delivery["WEB BUILD PIPELINE · GitHub Actions"]
+    direction LR
+    Trigger["Pull request<br/>or push to main"] --> Checkout["Checkout"] --> Node["Node.js 22"] --> Install["npm ci<br/>apps/web"] --> Build["Vite production build"]
+  end
+
+  classDef client fill:#102a43,stroke:#55c2b5,color:#f2f7fa,stroke-width:1.5px
+  classDef api fill:#172554,stroke:#7aa2f7,color:#f2f7fa,stroke-width:1.5px
+  classDef data fill:#18392f,stroke:#78c99b,color:#f2f7fa,stroke-width:1.5px
+  classDef pipeline fill:#332b1b,stroke:#e4b95b,color:#f2f7fa,stroke-width:1.5px
+  class UI,Pages,Sim,ClientAPI client
+  class Http,Auth,Protected,Guard,Controllers,Services,Prisma api
+  class DB data
+  class Trigger,Checkout,Node,Install,Build pipeline
+```
+
+### Request and data flow
+
+1. The browser renders the route and feature components. The investment simulator generates its projections in the browser and draws the percentile range with Recharts.
+2. The API client sends JSON requests to Express. Session restoration posts to `/auth/refresh` with credentials so the browser can send the HTTP-only refresh cookie; protected requests carry the short-lived access token as a bearer token.
+3. Express routes authentication requests to the auth controller. Account, income-source, transaction, and finance routes pass through JWT authentication before reaching their controllers.
+4. Controllers call service functions for data access and finance calculations. Services use Prisma Client through the PostgreSQL driver adapter.
+5. PostgreSQL stores user and finance records. Dashboard responses combine account, income, transaction, loan, investment, budget, bill, and snapshot data for the web client.
+
+### Main API boundaries
+
+| API path | Purpose | Access |
+| --- | --- | --- |
+| `/auth/*` | Signup, login, refresh, logout | Public routes; refresh and logout use the refresh cookie |
+| `/accounts/*` | Account CRUD | JWT required |
+| `/income-sources/*` | Recurring income CRUD | JWT required |
+| `/transactions/*` | Income and expense transaction CRUD | JWT required |
+| `/finance/*` | Dashboard, loans, budgets, bills, and credit score | JWT required |
+
+The GitHub Actions workflow verifies the web production build for pull requests and pushes to `main`; it does not deploy the application. The current Monte Carlo simulator is a client-side feature and does not save simulation inputs or results to the API.
+
 ## Investment Simulator
 
 The dashboard includes an interactive, client-side Monte Carlo simulator with allocation sliders, investment horizon, and monthly SIP inputs. Changing an allocation preserves a 100% total. The simulator runs 1,000 monthly paths and shows P10, P50, and P90 values at each year-end, with the P10–P90 range and P50 median on an area chart.
