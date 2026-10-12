@@ -6,8 +6,9 @@ The project combines financial planning tools with backend engineering and secur
 
 ## Demo
 
-Watch the Finlitter demo: [finlitter.mp4](./finlitter.mp4)
+Watch the Finlitter demo:
 
+https://github.com/user-attachments/assets/b69cd489-8525-4e34-8d3b-eabd2e016c64
 <!-- Keep finlitter.mp4 in the same directory as this Markdown file. -->
 <video src="./finlitter.mp4" controls width="100%">
   Your browser does not support embedded video. You can
