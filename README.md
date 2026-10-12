@@ -126,6 +126,16 @@ Finlitter is under active development. The investment simulator MVP is implement
 
 Planned functionality may change as development and testing progress.
 
+## License
+
+Finlitter is source-available under the **Finlitter Source-Available Non-Commercial License**. See the [`LICENSE`](./LICENSE) file for the complete terms.
+
+The project is available for inspection, learning, educational activities, and permitted non-commercial use. Commercial use, including incorporation into commercial fintech products or services, requires prior written permission from the applicable copyright holders.
+
+Finlitter is source-available, not an OSI-approved open-source project.
+
+Third-party dependencies and components remain subject to their respective licenses.
+
 ## Getting Started
 
 The setup instructions will be added once the current database configuration, environment variables, and frontend/backend startup commands have been verified.
