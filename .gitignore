@@ -52,3 +52,5 @@ prisma/dev.db-journal
 # Misc
 # =========================
 *.local
+
+whatNext.md
