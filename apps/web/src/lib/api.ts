@@ -158,6 +158,22 @@ export const financeApi = {
   setCreditScore: (score: number) => requestJson<{ score: number }>("/finance/credit-score", send("PUT", { score })),
 };
 
+export const stockInvestmentApi = {
+  holdings: () => requestJson<any[]>("/investments/stocks/holdings"),
+  transactions: () => requestJson<any[]>("/investments/stocks/transactions"),
+  createTransaction: (data: {
+    exchange: "NSE" | "BSE";
+    symbol: string;
+    companyName?: string;
+    side: "BUY" | "SELL";
+    quantity: number;
+    executionPrice: string;
+    fees: string;
+    tradeDate: string;
+  }) => requestJson<any>("/investments/stocks/transactions", send("POST", data)),
+  reverseTransaction: (id: string, reason: string) => requestJson<any>(`/investments/stocks/transactions/${encodeURIComponent(id)}/reversals`, send("POST", { reason })),
+};
+
 export const auth = {
   signup: (data: { email: string; password: string; firstName: string; lastName: string; phone: string }) => apiSignup(data),
   login: (email: string, password: string) => apiLogin({ email, password }),
