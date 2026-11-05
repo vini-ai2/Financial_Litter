@@ -111,6 +111,11 @@ flowchart LR
 | `/income-sources/*` | Recurring income CRUD | JWT required |
 | `/transactions/*` | Income and expense transaction CRUD | JWT required |
 | `/finance/*` | Dashboard, loans, budgets, bills, and credit score | JWT required |
+| `/investments/stocks/holdings` | FIFO-derived manual stock holdings and cost basis | JWT required |
+| `/investments/stocks/transactions` | List or record immutable NSE/BSE BUY and SELL entries | JWT required |
+| `/investments/stocks/transactions/:id/reversals` | Append a reasoned reversal for a trade correction | JWT required |
+
+The stock ledger stores completed manual trades separately from legacy aggregate investment records. Holdings are derived with FIFO; buy fees are included in acquisition cost and sell fees reduce proceeds. Corrections append a linked reversal and, when needed, a replacement trade. New stock ledger values are not added to the existing net worth dashboard totals because no market valuation source is connected. This is a portfolio recordkeeping feature, not tax reporting, brokerage execution, or intraday assistance.
 
 The GitHub Actions workflow verifies the web production build for pull requests and pushes to `main`; it does not deploy the application. The current Monte Carlo simulator is a client-side feature and does not save simulation inputs or results to the API.
 

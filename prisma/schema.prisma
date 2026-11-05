@@ -21,6 +21,7 @@ model User {
   budgets       Budget[]
   incomeSources IncomeSource[]
   investments   Investment[]
+  stockTrades   StockTrade[]
   loans         Loan[]
   monthlySnapshots MonthlySnapshot[]
   sessions      Session[]
@@ -128,6 +129,28 @@ model Investment {
   @@index([userId])
 }
 
+model StockTrade {
+  id                    String          @id @default(uuid())
+  userId                String
+  exchange              StockExchange
+  symbol                String          @db.VarChar(20)
+  companyName           String?         @db.VarChar(120)
+  side                  StockTradeSide
+  quantity              Int
+  executionPrice        Decimal         @db.Decimal(20, 6)
+  fees                  Decimal         @db.Decimal(20, 2)
+  tradeDate             DateTime        @db.Date
+  createdAt             DateTime        @default(now())
+  reversesTransactionId String?         @unique
+  correctionReason      String?         @db.VarChar(500)
+  user                  User            @relation(fields: [userId], references: [id])
+  reversesTransaction   StockTrade?     @relation("StockTradeReversals", fields: [reversesTransactionId], references: [id], onDelete: Restrict)
+  reversal              StockTrade?     @relation("StockTradeReversals")
+
+  @@index([userId, exchange, symbol, tradeDate, createdAt])
+  @@index([userId, createdAt])
+}
+
 model Bill {
   id         String     @id @default(uuid())
   userId     String
@@ -183,6 +206,16 @@ enum InvestmentCategory {
   FIXED_INCOME
   ETF
   MUTUAL_FUND
+}
+
+enum StockExchange {
+  NSE
+  BSE
+}
+
+enum StockTradeSide {
+  BUY
+  SELL
 }
 
 enum Recurrence {
