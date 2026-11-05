@@ -126,6 +126,10 @@ function Index() {
   return (
     <div className="bg-auth-glow min-h-screen px-4 py-8 sm:px-6">
       <div className="mx-auto w-full max-w-6xl space-y-5">
+      <nav aria-label="Main navigation" className="flex items-center justify-between border-b border-border pb-3">
+        <Link to="/" className="text-sm font-semibold tracking-tight">Finlitter</Link>
+        <Link to="/investments" className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">Investments</Link>
+      </nav>
       <div className="glass-card mx-auto w-full max-w-md rounded-3xl p-8 text-center">
         <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary">
           <span className="font-display text-xl font-extrabold text-primary-foreground">
