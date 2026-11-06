@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
-import { financeApi, stockInvestmentApi } from "@/lib/api";
+import { financeApi, restoreAccessToken, stockInvestmentApi } from "@/lib/api";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 
 type LegacyInvestment = {
@@ -63,6 +63,7 @@ export const Route = createFileRoute("/investments")({
 });
 
 function InvestmentsPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState<InvestmentsData | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -96,7 +97,19 @@ function InvestmentsPage() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    restoreAccessToken().then((hasSession) => {
+      if (!active) return;
+      if (hasSession) void load();
+      else void navigate({ to: "/login", replace: true });
+    }).catch(() => {
+      if (!active) return;
+      setError("Could not connect to the finance service. Check the backend, then retry.");
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [load, navigate]);
 
   async function submitTrade(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -166,7 +179,7 @@ function InvestmentsPage() {
                 <form className="grid gap-4 sm:grid-cols-2" onSubmit={submitTrade}>
                   <label className="grid gap-1.5"><span className="field-label">Action</span><select className={input} name="side" required><option value="BUY">Buy</option><option value="SELL">Sell</option></select></label>
                   <label className="grid gap-1.5"><span className="field-label">Exchange</span><select className={input} name="exchange" required><option value="NSE">NSE</option><option value="BSE">BSE</option></select></label>
-                  <label className="grid gap-1.5 sm:col-span-2"><span className="field-label">Trading symbol</span><input className={input} name="symbol" autoComplete="off" maxLength={20} pattern="[A-Za-z0-9&.-]+" placeholder="e.g. INFY" required /></label>
+                  <label className="grid gap-1.5 sm:col-span-2"><span className="field-label">Trading symbol</span><input className={input} name="symbol" autoComplete="off" maxLength={20} pattern="[A-Za-z0-9&.\-]+" placeholder="e.g. INFY" required /></label>
                   <label className="grid gap-1.5 sm:col-span-2"><span className="field-label">Company name (optional)</span><input className={input} name="companyName" maxLength={120} autoComplete="off" /></label>
                   <label className="grid gap-1.5"><span className="field-label">Quantity (shares)</span><input className={input} name="quantity" type="number" min="1" max="2147483647" step="1" required /></label>
                   <label className="grid gap-1.5"><span className="field-label">Execution price (₹ / share)</span><input className={input} name="executionPrice" type="number" min="0.000001" step="any" inputMode="decimal" required /></label>

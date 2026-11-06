@@ -28,12 +28,21 @@ export const createStockTradeSchema = z.object({
 
 const reversalSchema = z.object({ reason: z.string().trim().min(1).max(500) });
 
+function logStockTradeFailure(operation: string, error: unknown) {
+  if (error instanceof Error) {
+    console.error(`[stock ledger] ${operation} failed: ${error.name}: ${error.message}`, error.stack);
+    return;
+  }
+  console.error(`[stock ledger] ${operation} failed:`, error);
+}
+
 export async function createStockTradeController(req: Request, res: Response) {
   const parsed = createStockTradeSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid stock trade data", details: parsed.error.flatten() });
   try {
     return res.status(201).json(await createStockTrade(req.userId, parsed.data));
   } catch (error) {
+    logStockTradeFailure("create trade", error);
     if (error instanceof InsufficientSharesError) {
       return res.status(409).json({ error: "Sale quantity exceeds available shares", availableQuantity: error.available });
     }
@@ -46,12 +55,13 @@ export async function createStockTradeController(req: Request, res: Response) {
 
 export async function listStockTradeHistoryController(req: Request, res: Response) {
   try { return res.json(await getStockTradeHistory(req.userId)); }
-  catch { return res.status(500).json({ error: "Could not load stock trade history" }); }
+  catch (error) { logStockTradeFailure("load trade history", error); return res.status(500).json({ error: "Could not load stock trade history" }); }
 }
 
 export async function listStockHoldingsController(req: Request, res: Response) {
   try { return res.json(await getStockHoldings(req.userId)); }
   catch (error) {
+    logStockTradeFailure("calculate holdings", error);
     if (error instanceof Error && error.message === "STOCK_LEDGER_INTEGRITY_ERROR") {
       return res.status(409).json({ error: "The stock ledger needs correction before holdings can be calculated" });
     }
@@ -70,6 +80,7 @@ export async function reverseStockTradeController(req: Request, res: Response) {
     if (result.kind === "ALREADY_REVERSED") return res.status(409).json({ error: "Stock trade has already been reversed" });
     return res.status(201).json(result.reversal);
   } catch (error) {
+    logStockTradeFailure("reverse trade", error);
     if (error instanceof InsufficientSharesError) {
       return res.status(409).json({ error: "This correction would leave a sale without enough shares" });
     }

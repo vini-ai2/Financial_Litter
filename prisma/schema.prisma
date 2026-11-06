@@ -7,24 +7,25 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  phone         String
-  creditScore   Int?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  accounts      Account[]
-  bills         Bill[]
-  budgets       Budget[]
-  incomeSources IncomeSource[]
-  investments   Investment[]
-  stockTrades   StockTrade[]
-  loans         Loan[]
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  phone            String
+  creditScore      Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  accounts         Account[]
+  bills            Bill[]
+  budgets          Budget[]
+  incomeSources    IncomeSource[]
+  investments      Investment[]
+  stockTrades      StockTrade[]
+  loans            Loan[]
   monthlySnapshots MonthlySnapshot[]
-  sessions      Session[]
+  sessions         Session[]
+  newsPreference   NewsPreference?
 }
 
 model MonthlySnapshot {
@@ -130,22 +131,22 @@ model Investment {
 }
 
 model StockTrade {
-  id                    String          @id @default(uuid())
+  id                    String         @id @default(uuid())
   userId                String
   exchange              StockExchange
-  symbol                String          @db.VarChar(20)
-  companyName           String?         @db.VarChar(120)
+  symbol                String         @db.VarChar(20)
+  companyName           String?        @db.VarChar(120)
   side                  StockTradeSide
   quantity              Int
-  executionPrice        Decimal         @db.Decimal(20, 6)
-  fees                  Decimal         @db.Decimal(20, 2)
-  tradeDate             DateTime        @db.Date
-  createdAt             DateTime        @default(now())
-  reversesTransactionId String?         @unique
-  correctionReason      String?         @db.VarChar(500)
-  user                  User            @relation(fields: [userId], references: [id])
-  reversesTransaction   StockTrade?     @relation("StockTradeReversals", fields: [reversesTransactionId], references: [id], onDelete: Restrict)
-  reversal              StockTrade?     @relation("StockTradeReversals")
+  executionPrice        Decimal        @db.Decimal(20, 6)
+  fees                  Decimal        @db.Decimal(20, 2)
+  tradeDate             DateTime       @db.Date
+  createdAt             DateTime       @default(now())
+  reversesTransactionId String?        @unique
+  correctionReason      String?        @db.VarChar(500)
+  user                  User           @relation(fields: [userId], references: [id])
+  reversesTransaction   StockTrade?    @relation("StockTradeReversals", fields: [reversesTransactionId], references: [id], onDelete: Restrict)
+  reversal              StockTrade?    @relation("StockTradeReversals")
 
   @@index([userId, exchange, symbol, tradeDate, createdAt])
   @@index([userId, createdAt])
@@ -178,6 +179,210 @@ model Budget {
   user          User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model NewsSource {
+  id              String                 @id @default(cuid())
+  key             String                 @unique @db.VarChar(100)
+  name            String                 @db.VarChar(160)
+  organization    String                 @db.VarChar(160)
+  jurisdiction    String                 @db.VarChar(80)
+  category        NewsSourceCategory
+  accessMethod    NewsAccessMethod
+  officialUrl     String                 @db.VarChar(2048)
+  enabled         Boolean                @default(false)
+  retrievalConfig Json                   @default("{}")
+  lastRetrievedAt DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  documents       NewsDocument[]
+  failures        NewsIngestionFailure[]
+  eventEvidence   NewsEventEvidence[]
+
+  @@index([enabled, category])
+}
+
+model NewsDocument {
+  id             String              @id @default(cuid())
+  sourceId       String
+  externalId     String              @db.VarChar(512)
+  title          String              @db.VarChar(1000)
+  summary        String?
+  content        String?
+  canonicalUrl   String              @db.VarChar(2048)
+  publishedAt    DateTime?
+  retrievedAt    DateTime            @default(now())
+  contentHash    String              @db.Char(64)
+  sourceMetadata Json                @default("{}")
+  source         NewsSource          @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  entityMentions NewsEntityMention[]
+  eventEvidence  NewsEventEvidence[]
+  eventLinks     NewsEventDocument[]
+
+  @@unique([sourceId, externalId])
+  @@unique([sourceId, contentHash])
+  @@index([sourceId, publishedAt])
+}
+
+model NewsIngestionFailure {
+  id         String     @id @default(cuid())
+  sourceId   String
+  externalId String?    @db.VarChar(512)
+  stage      String     @db.VarChar(40)
+  message    String     @db.VarChar(2000)
+  attempts   Int        @default(1)
+  occurredAt DateTime   @default(now())
+  source     NewsSource @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+
+  @@index([sourceId, occurredAt])
+}
+
+model NewsPreference {
+  id         String          @id @default(cuid())
+  userId     String          @unique
+  categories NewsEventType[]
+  regions    String[]        @default([])
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NewsEntity {
+  id             String                 @id @default(cuid())
+  canonicalName  String                 @db.VarChar(240)
+  normalizedName String                 @db.VarChar(240)
+  type           NewsEntityType
+  jurisdiction   String?                @db.VarChar(80)
+  aliases        NewsEntityAlias[]
+  identifiers    NewsEntityIdentifier[]
+  mentions       NewsEntityMention[]
+  eventEntities  NewsEventEntity[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([normalizedName, type])
+}
+
+model NewsEntityAlias {
+  id              String     @id @default(cuid())
+  entityId        String
+  alias           String     @db.VarChar(240)
+  normalizedAlias String     @db.VarChar(240)
+  entity          NewsEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@index([normalizedAlias])
+  @@index([entityId])
+}
+
+model NewsEntityIdentifier {
+  id              String     @id @default(cuid())
+  entityId        String
+  scheme          String     @db.VarChar(80)
+  value           String     @db.VarChar(200)
+  normalizedValue String     @db.VarChar(200)
+  entity          NewsEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([scheme, normalizedValue])
+  @@index([entityId])
+}
+
+model NewsEntityMention {
+  id                 String                @id @default(cuid())
+  documentId         String
+  entityId           String?
+  matchedAlias       String                @db.VarChar(240)
+  candidateEntityIds Json                  @default("[]")
+  field              String                @db.VarChar(16)
+  startOffset        Int
+  endOffset          Int
+  status             NewsEntityMatchStatus
+  confidence         Float
+  document           NewsDocument          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entity             NewsEntity?           @relation(fields: [entityId], references: [id], onDelete: Restrict)
+
+  @@unique([documentId, field, startOffset, endOffset, matchedAlias])
+  @@index([documentId, startOffset])
+  @@index([entityId])
+}
+
+model NewsEvent {
+  id                String              @id @default(cuid())
+  dedupeKey         String?             @unique @db.VarChar(64)
+  currentRevisionId String?             @unique
+  createdAt         DateTime            @default(now())
+  revisions         NewsEventRevision[]
+  currentRevision   NewsEventRevision?  @relation("CurrentEventRevision", fields: [currentRevisionId], references: [id], onDelete: Restrict)
+  documents         NewsEventDocument[]
+  entities          NewsEventEntity[]
+}
+
+model NewsEventRevision {
+  id                       String              @id @default(cuid())
+  eventId                  String
+  version                  Int
+  eventType                NewsEventType
+  classificationConfidence Float
+  materiality              NewsMateriality
+  revisionType             NewsRevisionType
+  title                    String              @db.VarChar(1000)
+  summary                  String?
+  eventDate                DateTime?
+  facts                    Json                @default("[]")
+  createdAt                DateTime            @default(now())
+  event                    NewsEvent           @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  currentFor               NewsEvent?          @relation("CurrentEventRevision")
+  evidence                 NewsEventEvidence[]
+  documents                NewsEventDocument[]
+  entities                 NewsEventEntity[]
+
+  @@unique([eventId, version])
+  @@index([eventId, createdAt])
+}
+
+model NewsEventEvidence {
+  id          String            @id @default(cuid())
+  revisionId  String
+  documentId  String
+  sourceId    String
+  field       String            @db.VarChar(16)
+  startOffset Int
+  endOffset   Int
+  quote       String
+  factType    String            @db.VarChar(80)
+  revision    NewsEventRevision @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  document    NewsDocument      @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  source      NewsSource        @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+
+  @@index([revisionId])
+  @@index([documentId])
+  @@index([sourceId])
+}
+
+model NewsEventDocument {
+  eventId    String
+  revisionId String
+  documentId String
+  linkedAt   DateTime          @default(now())
+  event      NewsEvent         @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  revision   NewsEventRevision @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  document   NewsDocument      @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@id([eventId, documentId])
+  @@index([revisionId])
+  @@index([documentId])
+}
+
+model NewsEventEntity {
+  eventId    String
+  revisionId String
+  entityId   String
+  event      NewsEvent         @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  revision   NewsEventRevision @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  entity     NewsEntity        @relation(fields: [entityId], references: [id], onDelete: Restrict)
+
+  @@id([revisionId, entityId])
+  @@index([eventId])
+  @@index([entityId])
 }
 
 enum AccountType {
@@ -235,4 +440,56 @@ enum IncomeFrequency {
   WEEKLY
   MONTHLY
   ANNUAL
+}
+
+enum NewsSourceCategory {
+  EXCHANGE
+  REGULATOR
+  CENTRAL_BANK
+  GOVERNMENT
+  OTHER
+}
+
+enum NewsAccessMethod {
+  RSS
+  API
+  LICENSED_FEED
+  MANUAL
+}
+
+enum NewsEntityType {
+  COMPANY
+  SECURITY
+  REGULATOR
+  SECTOR
+}
+
+enum NewsEntityMatchStatus {
+  RESOLVED
+  AMBIGUOUS
+  UNRESOLVED
+}
+
+enum NewsEventType {
+  COMPANY_DEVELOPMENT
+  EARNINGS
+  REGULATORY_ACTION
+  MARKET_ECONOMIC
+  CORPORATE_ACTION
+  RISK
+}
+
+enum NewsMateriality {
+  LOW
+  MEDIUM
+  HIGH
+  UNKNOWN
+}
+
+enum NewsRevisionType {
+  INITIAL
+  AMENDMENT
+  CORRECTION
+  RETRACTION
+  DEVELOPMENT
 }

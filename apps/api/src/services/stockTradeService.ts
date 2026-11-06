@@ -18,7 +18,11 @@ const toDate = (date: string) => new Date(`${date}T00:00:00.000Z`);
 async function serializable<T>(work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   for (let attempt = 0; ; attempt += 1) {
     try {
-      return await prisma.$transaction(work, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      return await prisma.$transaction(work, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        maxWait: 15_000,
+        timeout: 30_000,
+      });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && attempt < 3) continue;
       throw error;

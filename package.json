@@ -29,7 +29,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch apps/api/src/index.ts",
-    "test:api": "tsx --test apps/api/src/test/stockLedger.test.ts",
+    "test:api": "tsx --test apps/api/src/test/stockLedger.test.ts apps/api/src/test/newsIngestion.test.ts apps/api/src/test/newsIntelligence.test.ts apps/api/src/test/newsApi.test.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
