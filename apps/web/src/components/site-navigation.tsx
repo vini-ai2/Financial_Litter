@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-type SiteNavigationProps = { active: "overview" | "investments" };
+type SiteNavigationProps = { active: "overview" | "investments" | "news" };
 
 export function SiteNavigation({ active }: SiteNavigationProps) {
   const linkClass = (key: SiteNavigationProps["active"]) =>
@@ -19,6 +19,7 @@ export function SiteNavigation({ active }: SiteNavigationProps) {
       <div className="app-navigation__links flex items-center gap-1">
         <Link to="/" aria-current={active === "overview" ? "page" : undefined} className={linkClass("overview")}>Overview</Link>
         <Link to="/investments" aria-current={active === "investments" ? "page" : undefined} className={linkClass("investments")}>Investments</Link>
+        <Link to="/news" aria-current={active === "news" ? "page" : undefined} className={linkClass("news")}>News</Link>
       </div>
     </nav>
   );

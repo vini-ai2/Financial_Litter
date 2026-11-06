@@ -1,6 +1,10 @@
 // apps/web/src/lib/api.ts
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.replace(/\/$/, "")
+  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:3000`
+  return "http://localhost:3000"
+}
 
 // In-memory token store — never localStorage (XSS risk)
 let accessToken: string | null = null
@@ -18,6 +22,21 @@ export function getAccessToken(): string | null {
   return accessToken
 }
 
+export async function restoreAccessToken(): Promise<boolean> {
+  if (accessToken) return true
+
+  const res = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+  })
+  if (!res.ok) return false
+
+  const json = await res.json()
+  if (typeof json.accessToken !== "string" || !json.accessToken) return false
+  setAccessToken(json.accessToken)
+  return true
+}
+
 // Base fetch wrapper that attaches the token automatically
 async function apiFetch(path: string, options: RequestInit = {}) {
   const headers: Record<string, string> = {
@@ -29,7 +48,7 @@ async function apiFetch(path: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${accessToken}`
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers,
     credentials: 'include', // sends httpOnly refresh token cookie automatically
@@ -40,7 +59,7 @@ async function apiFetch(path: string, options: RequestInit = {}) {
     const refreshed = await refreshAccessToken()
     if (refreshed) {
       headers['Authorization'] = `Bearer ${accessToken}`
-      return fetch(`${BASE_URL}${path}`, {
+      return fetch(`${getApiBaseUrl()}${path}`, {
         ...options,
         headers,
         credentials: 'include',
@@ -99,7 +118,7 @@ export async function apiLogout() {
 
 async function refreshAccessToken(): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+    const res = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
       method: 'POST',
       credentials: 'include', // sends cookie
     })
@@ -172,6 +191,22 @@ export const stockInvestmentApi = {
     tradeDate: string;
   }) => requestJson<any>("/investments/stocks/transactions", send("POST", data)),
   reverseTransaction: (id: string, reason: string) => requestJson<any>(`/investments/stocks/transactions/${encodeURIComponent(id)}/reversals`, send("POST", { reason })),
+};
+
+export type NewsCategory = "COMPANY_DEVELOPMENT" | "EARNINGS" | "REGULATORY_ACTION" | "MARKET_ECONOMIC" | "CORPORATE_ACTION" | "RISK";
+export type NewsFeedFilters = { page?: number; pageSize?: number; category?: NewsCategory; region?: string; company?: string; from?: string; to?: string };
+export type NewsPreferences = { categories: NewsCategory[]; regions: string[] };
+
+export const newsApi = {
+  events: (filters: NewsFeedFilters) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) if (value !== undefined && value !== "") query.set(key, String(value));
+    return requestJson<{ items: any[]; total: number; page: number; pageSize: number; totalPages: number }>(`/news/events?${query.toString()}`);
+  },
+  event: (id: string) => requestJson<any>(`/news/events/${encodeURIComponent(id)}`),
+  filters: () => requestJson<{ categories: NewsCategory[]; regions: string[] }>("/news/filters"),
+  preferences: () => requestJson<NewsPreferences>("/news/preferences"),
+  savePreferences: (preferences: NewsPreferences) => requestJson<NewsPreferences>("/news/preferences", send("PUT", preferences)),
 };
 
 export const auth = {

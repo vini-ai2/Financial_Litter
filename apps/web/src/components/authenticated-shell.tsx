@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { SiteNavigation } from "@/components/site-navigation";
 
 type AuthenticatedShellProps = {
-  active: "overview" | "investments";
+  active: "overview" | "investments" | "news";
   children: ReactNode;
 };
 
