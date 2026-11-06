@@ -48,11 +48,11 @@ function SignupPage() {
   }
 
   return <AuthShell>
-    <div className="glass-card w-full max-w-[440px] rounded-3xl p-6 sm:p-8">
-      <h2 className="font-display text-2xl font-bold tracking-tight">Create your account</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Two minutes, no paperwork.</p>
+    <div className="auth-form order-2 w-full max-w-[440px] rounded-lg border border-border bg-card p-6 sm:p-8">
+      <h2 className="font-display text-2xl font-semibold tracking-tight">Create an account</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Add your contact details and choose a password.</p>
       <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5"><span className="field-label">First name</span><input className="field-input" autoComplete="given-name" value={firstName} onChange={e=>setFirstName(e.target.value)} required /></label>
           <label className="grid gap-1.5"><span className="field-label">Last name</span><input className="field-input" autoComplete="family-name" value={lastName} onChange={e=>setLastName(e.target.value)} required /></label>
         </div>
@@ -60,7 +60,7 @@ function SignupPage() {
         <label className="grid gap-1.5"><span className="field-label">Mobile number</span><input className="field-input" type="tel" autoComplete="tel" value={mobileNumber} onChange={e=>setMobileNumber(e.target.value)} required /></label>
         <label className="grid gap-1.5"><span className="field-label">Password</span><input className="field-input" type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} minLength={8} required /></label>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <button className="mt-1 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50" disabled={loading}>{loading?"Creating account…":"Create account"}</button>
+        <button className="mt-1 w-full rounded-md bg-primary py-3 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-50" disabled={loading}>{loading?"Creating account…":"Create account"}</button>
       </form>
       <p className="mt-5 text-center text-sm text-muted-foreground">Already registered? <Link to="/login" className="font-semibold text-primary">Log in</Link></p>
     </div>
