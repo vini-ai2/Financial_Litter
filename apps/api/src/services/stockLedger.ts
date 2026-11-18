@@ -32,7 +32,8 @@ export class InsufficientSharesError extends Error {
 }
 
 /** Computes delivery holdings and realized P&L using FIFO and exact decimal arithmetic. */
-export function calculateStockHoldings(trades: StockTradeForLedger[]): StockHolding[] {
+export function calculateStockHoldings(trades: StockTradeForLedger[], includeClosed = false, outputScale = 2): StockHolding[] {
+  if (!Number.isInteger(outputScale) || outputScale < 0 || outputScale > 20) throw new Error("INVALID_LEDGER_OUTPUT_SCALE");
   const reversedIds = new Set(
     trades.flatMap((trade) => trade.reversesTransactionId ? [trade.reversesTransactionId] : []),
   );
@@ -87,7 +88,7 @@ export function calculateStockHoldings(trades: StockTradeForLedger[]): StockHold
   }
 
   return [...groups.values()]
-    .filter((group) => group.lots.length > 0)
+    .filter((group) => includeClosed || group.lots.length > 0)
     .map((group) => {
       const quantity = group.lots.reduce((sum, lot) => sum + lot.quantity, 0);
       const costBasis = group.lots.reduce((sum, lot) => sum.plus(lot.cost), new Prisma.Decimal(0));
@@ -96,9 +97,9 @@ export function calculateStockHoldings(trades: StockTradeForLedger[]): StockHold
         symbol: group.symbol,
         companyName: group.companyName,
         quantity,
-        costBasis: costBasis.toFixed(2),
+        costBasis: costBasis.toFixed(outputScale),
         averageCostPerShare: quantity ? costBasis.div(quantity).toFixed(6) : "0.000000",
-        realizedPnl: group.realized.toFixed(2),
+        realizedPnl: group.realized.toFixed(outputScale),
       };
     });
 }

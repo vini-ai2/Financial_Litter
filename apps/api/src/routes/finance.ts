@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
 import {
   getDashboardController, listLoansController, createLoanController, updateLoanController, deleteLoanController,
+  calculateEmiController, calculateSipController, calculateCagrController, calculateFdController,
   listBudgetsController, createBudgetController, updateBudgetController, deleteBudgetController,
   listBillsController, createBillController, updateBillController, deleteBillController,
   getCreditScoreController, updateCreditScoreController,
@@ -10,6 +11,10 @@ import {
 const router = Router();
 router.use(authenticate);
 router.get("/dashboard", getDashboardController);
+router.post("/calculators/emi", calculateEmiController);
+router.post("/calculators/sip", calculateSipController);
+router.post("/calculators/cagr", calculateCagrController);
+router.post("/calculators/fd", calculateFdController);
 router.get("/loans", listLoansController);
 router.post("/loans", createLoanController);
 router.put("/loans/:id", updateLoanController);

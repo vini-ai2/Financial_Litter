@@ -4,6 +4,18 @@ import prisma from "../lib/prisma";
 const n = (v: Prisma.Decimal | number | null | undefined) => Number(v ?? 0);
 const monthly = (amount: number, f: string) => f === "WEEKLY" ? amount * 52 / 12 : f === "ANNUAL" ? amount / 12 : amount;
 
+/** Monthly-equivalent effective recurring income plus income transactions in the selected month. */
+export function aggregateMonthlyIncome(
+  incomeSources: Array<{ amount: Prisma.Decimal | number; frequency: string; effectiveFrom: Date; effectiveUntil: Date | null; isActive: boolean }>,
+  transactionIncome: number,
+  asOf: Date,
+): number {
+  const recurringIncome = incomeSources
+    .filter((source) => source.isActive && source.effectiveFrom <= asOf && (!source.effectiveUntil || source.effectiveUntil >= asOf))
+    .reduce((sum, source) => sum + monthly(n(source.amount), source.frequency), 0);
+  return recurringIncome + transactionIncome;
+}
+
 export async function getDashboard(userId: string) {
   const now = new Date(), year = now.getUTCFullYear(), month = now.getUTCMonth();
   const monthStart = new Date(Date.UTC(year, month, 1)), nextMonth = new Date(Date.UTC(year, month + 1, 1));
@@ -21,11 +33,11 @@ export async function getDashboard(userId: string) {
     prisma.bill.findMany({ where: { userId }, orderBy: { dueDate: "asc" } }),
     prisma.monthlySnapshot.findUnique({ where: { userId_year_month: { userId, year: previousYear, month: previousMonth } } }),
   ]);
-  const income = incomeSources.filter((s) => s.effectiveFrom <= now && (!s.effectiveUntil || s.effectiveUntil >= now)).reduce((sum,s)=>sum+monthly(n(s.amount),s.frequency),0);
   const expenses = monthTransactions.filter(t=>t.type === "EXPENSE").reduce((sum,t)=>sum+n(t.amount),0);
   const expenseCategories = [...monthTransactions.filter(t=>t.type === "EXPENSE").reduce((map,t)=>map.set(t.category,(map.get(t.category)||0)+n(t.amount)),new Map<string,number>()).entries()].map(([category,amount])=>({category,amount})).sort((a,b)=>b.amount-a.amount);
   const transactionIncome = monthTransactions.filter(t=>t.type === "INCOME").reduce((sum,t)=>sum+n(t.amount),0);
-  const totalIncome = income || transactionIncome;
+  // Recorded transactions supplement recurring income; neither valid source is discarded.
+  const totalIncome = aggregateMonthlyIncome(incomeSources, transactionIncome, now);
   const savingsRate = totalIncome > 0 ? ((totalIncome-expenses)/totalIncome)*100 : null;
   const accountAssets = accounts.reduce((s,a)=>s+n(a.balance),0), investmentAssets = investments.reduce((s,i)=>s+n(i.currentValue),0);
   const assets = accountAssets+investmentAssets, liabilities = loans.reduce((s,l)=>s+n(l.outstanding),0), netWorth=assets-liabilities;

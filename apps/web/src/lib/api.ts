@@ -1,7 +1,8 @@
 // apps/web/src/lib/api.ts
 
 function getApiBaseUrl() {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.replace(/\/$/, "")
+  const configuredUrl = import.meta.env?.VITE_API_URL;
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "")
   if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:3000`
   return "http://localhost:3000"
 }
@@ -175,10 +176,41 @@ export const financeApi = {
   updateBill: (id: string, data: unknown) => requestJson<any>(`/finance/bills/${id}`, send("PUT", data)),
   deleteBill: (id: string) => requestJson<void>(`/finance/bills/${id}`, send("DELETE")),
   setCreditScore: (score: number) => requestJson<{ score: number }>("/finance/credit-score", send("PUT", { score })),
+  calculateEmi: (data: { principal: number; annualRatePercent: number; tenureMonths: number }) =>
+    requestJson<{ monthlyPayment: number }>("/finance/calculators/emi", send("POST", data)),
+  calculateSip: (data: { monthlyPayment: number; annualEffectiveRatePercent: number; tenureMonths: number; timing: "MONTH_END" | "BEGINNING_OF_MONTH" }) =>
+    requestJson<{ futureValue: number }>("/finance/calculators/sip", send("POST", data)),
+  calculateCagr: (data: { beginningValue: number; endingValue: number; years: number }) =>
+    requestJson<{ annualizedReturn: number }>("/finance/calculators/cagr", send("POST", data)),
+  calculateFd: (data: { principal: number; annualNominalRatePercent: number; years: number; compoundingFrequency: number }) =>
+    requestJson<{ maturityValue: number }>("/finance/calculators/fd", send("POST", data)),
 };
 
 export const stockInvestmentApi = {
   holdings: () => requestJson<any[]>("/investments/stocks/holdings"),
+  portfolio: () => requestJson<any>("/investments/stocks/portfolio"),
+  savePrice: (data: { exchange: "NSE" | "BSE"; symbol: string; price: string }) =>
+    requestJson<{ exchange: "NSE" | "BSE"; symbol: string; price: string; source: string; asOf: string }>("/investments/stocks/prices", send("PUT", data)),
+  rebalancePreview: (targets: Array<{ exchange: "NSE" | "BSE"; symbol: string; targetPercent: string }>) =>
+    requestJson<{ totalMarketValue: string; lines: Array<{ exchange: "NSE" | "BSE"; symbol: string; currentAllocationPercent: string; targetAllocationPercent: string; deviationPercentagePoints: string; estimatedTradeAmount: string; action: "BUY" | "SELL" | "HOLD" }> }>("/investments/stocks/rebalance-preview", send("POST", { targets })),
+  captureSnapshot: () => requestJson<{ snapshot: PortfolioSnapshotSummary; duplicate: boolean; holdings?: PortfolioSnapshotHolding[] }>("/investments/stocks/portfolio/snapshots", send("POST")),
+  snapshotHistory: (range: { from?: string; to?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (range.from) query.set("from", range.from);
+    if (range.to) query.set("to", range.to);
+    return requestJson<PortfolioSnapshotSummary[]>(`/investments/stocks/portfolio/snapshots?${query.toString()}`);
+  },
+  historicalValuation: (range: { from?: string; to?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (range.from) query.set("from", range.from);
+    if (range.to) query.set("to", range.to);
+    return requestJson<PortfolioSnapshotSummary[]>(`/investments/stocks/portfolio/history?${query.toString()}`);
+  },
+  compareSnapshots: (from: string, to: string) => {
+    const query = new URLSearchParams({ from, to });
+    return requestJson<{ from: { id: string; capturedAt: string; valuationStatus: string }; to: { id: string; capturedAt: string; valuationStatus: string }; knownMarketValueChange: string; totalMarketValueChange: string | null; realizedPnlChange: string; knownUnrealizedPnlChange: string }>(`/investments/stocks/portfolio/history/comparison?${query.toString()}`);
+  },
+  snapshot: (id: string) => requestJson<PortfolioSnapshotSummary & { holdings: PortfolioSnapshotHolding[] }>(`/investments/stocks/portfolio/snapshots/${encodeURIComponent(id)}`),
   transactions: () => requestJson<any[]>("/investments/stocks/transactions"),
   createTransaction: (data: {
     exchange: "NSE" | "BSE";
@@ -191,6 +223,37 @@ export const stockInvestmentApi = {
     tradeDate: string;
   }) => requestJson<any>("/investments/stocks/transactions", send("POST", data)),
   reverseTransaction: (id: string, reason: string) => requestJson<any>(`/investments/stocks/transactions/${encodeURIComponent(id)}/reversals`, send("POST", { reason })),
+};
+
+export type PortfolioSnapshotSummary = {
+  id: string;
+  capturedAt: string;
+  valuationStatus: "COMPLETE" | "INCOMPLETE" | "STALE";
+  activePositionCount: number;
+  pricedPositionCount?: number;
+  missingPriceCount: number;
+  stalePriceCount: number;
+  investedCostBasis: string;
+  marketValueForPricedHoldings: string;
+  totalMarketValue: string | null;
+  realizedPnl: string;
+  unrealizedPnlForPricedHoldings: string;
+  totalUnrealizedPnl: string | null;
+};
+
+export type PortfolioSnapshotHolding = {
+  exchange: "NSE" | "BSE";
+  symbol: string;
+  quantity: number;
+  costBasis: string;
+  averageCost: string;
+  price: string | null;
+  priceSource: string | null;
+  priceAsOf: string | null;
+  priceStatus: "CURRENT" | "STALE" | "MISSING";
+  marketValue: string | null;
+  realizedPnl: string;
+  unrealizedPnl: string | null;
 };
 
 export type NewsCategory = "COMPANY_DEVELOPMENT" | "EARNINGS" | "REGULATORY_ACTION" | "MARKET_ECONOMIC" | "CORPORATE_ACTION" | "RISK";

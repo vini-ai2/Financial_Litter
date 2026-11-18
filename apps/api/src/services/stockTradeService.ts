@@ -1,6 +1,12 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma";
 import { calculateStockHoldings, InsufficientSharesError, type StockTradeForLedger } from "./stockLedger";
+import {
+  calculateRebalancePreview,
+  calculateStockPortfolioAnalytics,
+  type StockPriceRecord,
+  type TargetAllocation,
+} from "./portfolioAnalytics";
 
 export type CreateStockTradeInput = {
   exchange: "NSE" | "BSE";
@@ -98,6 +104,56 @@ export async function getStockHoldings(userId: string) {
   const trades = await prisma.stockTrade.findMany({ where: { userId }, orderBy: [{ tradeDate: "asc" }, { createdAt: "asc" }, { id: "asc" }] });
   try {
     return calculateStockHoldings(trades as StockTradeForLedger[]);
+  } catch (error) {
+    if (error instanceof InsufficientSharesError) throw new Error("STOCK_LEDGER_INTEGRITY_ERROR");
+    throw error;
+  }
+}
+
+async function portfolioRecords(userId: string) {
+  const [trades, prices] = await Promise.all([
+    prisma.stockTrade.findMany({ where: { userId }, orderBy: [{ tradeDate: "asc" }, { createdAt: "asc" }, { id: "asc" }] }),
+    prisma.stockPrice.findMany({ where: { userId }, orderBy: [{ asOf: "desc" }, { updatedAt: "desc" }] }),
+  ]);
+  return { trades: trades as StockTradeForLedger[], prices: prices as StockPriceRecord[] };
+}
+
+export async function getStockPortfolioAnalytics(userId: string, now = new Date()) {
+  const { trades, prices } = await portfolioRecords(userId);
+  try {
+    return calculateStockPortfolioAnalytics(trades, prices, now);
+  } catch (error) {
+    if (error instanceof InsufficientSharesError) throw new Error("STOCK_LEDGER_INTEGRITY_ERROR");
+    throw error;
+  }
+}
+
+export async function upsertUserStockPrice(input: {
+  userId: string;
+  exchange: "NSE" | "BSE";
+  symbol: string;
+  price: string;
+}) {
+  const asOf = new Date();
+  return prisma.stockPrice.upsert({
+    where: { userId_exchange_symbol: { userId: input.userId, exchange: input.exchange, symbol: input.symbol } },
+    create: {
+      userId: input.userId,
+      exchange: input.exchange,
+      symbol: input.symbol,
+      price: new Prisma.Decimal(input.price),
+      source: "USER_ENTERED",
+      asOf,
+    },
+    update: { price: new Prisma.Decimal(input.price), source: "USER_ENTERED", asOf },
+  });
+}
+
+export async function getStockRebalancePreview(userId: string, targets: TargetAllocation[], now = new Date()) {
+  const { trades, prices } = await portfolioRecords(userId);
+  try {
+    const portfolio = calculateStockPortfolioAnalytics(trades, prices, now);
+    return calculateRebalancePreview(portfolio, targets);
   } catch (error) {
     if (error instanceof InsufficientSharesError) throw new Error("STOCK_LEDGER_INTEGRITY_ERROR");
     throw error;
