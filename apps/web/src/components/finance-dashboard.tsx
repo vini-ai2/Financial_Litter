@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { financeApi } from "@/lib/api";
 import { InvestmentSimulator } from "@/components/investment-simulator";
+import { MetricCard, PageIntro, StatePanel } from "@/components/ui/product";
 
 type Dashboard = any;
 const input = "field-input";
@@ -56,8 +57,8 @@ export function FinanceDashboard() {
   async function createBill(f: FormData) { await run(() => financeApi.createBill({ name:f.get("name"), amount:number(f,"amount"), category:f.get("category"), dueDate:isoDate(f.get("dueDate")), recurrence:f.get("recurrence") })); }
   async function saveCreditScore(f: FormData) { await run(() => financeApi.setCreditScore(number(f,"score"))); }
 
-  if (loading) return <div role="status" className="dashboard-loading py-12 text-center text-muted-foreground">Loading finance data…</div>;
-  if (!data) return <div className="dashboard-error" role="alert"><p>{error || "Dashboard unavailable"}</p><button className={`${subtleButton} mt-4`} onClick={() => { setLoading(true); void load(); }}>Try again</button></div>;
+  if (loading) return <div role="status" className="dashboard-loading py-12 text-center text-muted-foreground"><span className="loading-mark" /><p className="mt-3">Loading your finance data…</p></div>;
+  if (!data) return <StatePanel tone="error" title="Dashboard unavailable" action={<button className="button button--primary" onClick={() => { setLoading(true); void load(); }}>Try again</button>}>{error || "Could not load your finance data."}</StatePanel>;
   const o = data.overview;
   const metrics: [string,string,string][] = [
     ["Monthly income",rupees(o.monthlyIncome),`${data.incomeSources.length} active source${data.incomeSources.length===1?"":"s"}`],
@@ -65,10 +66,10 @@ export function FinanceDashboard() {
     ["Net worth",rupees(o.netWorth),o.netWorthChange===null?"Monthly comparison starts next month":`${o.netWorthChange>=0?"↑":"↓"} ${rupees(Math.abs(o.netWorthChange))} vs last month`],
     ["Savings rate",o.savingsRate===null?"—":`${o.savingsRate.toFixed(1)}%`,"Income minus tracked expenses"],
   ];
-  return <div className="dashboard-page space-y-8">
-    <header className="dashboard-intro flex flex-wrap items-end justify-between gap-4"><div><h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Finance overview</h1><p className="mt-2 text-base text-muted-foreground">{data.user.firstName ? `Welcome, ${data.user.firstName}. ` : ""}{new Date(`${data.month}-01`).toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</p></div><button className={subtleButton} onClick={()=>{setLoading(true);void load();}}>Refresh</button></header>
+  return <div className="dashboard-content space-y-8">
+    <PageIntro eyebrow={`MONTHLY OVERVIEW · ${new Date(`${data.month}-01`).toLocaleDateString("en-IN",{month:"long",year:"numeric"}).toUpperCase()}`} title={data.user.firstName ? `Welcome, ${data.user.firstName}.` : "Your money, at a glance."} description="A view of what you have recorded across income, spending, savings and investments." actions={<button className="button button--secondary" onClick={()=>{setLoading(true);void load();}}>Refresh overview</button>} />
     {error && <div role="alert" className="investment-notice--error rounded-md border px-4 py-3 text-sm">{error}</div>}
-    <section className="dashboard-metrics" aria-label="Monthly financial summary">{metrics.map(([label,value,sub])=><div key={label} className="dashboard-metric"><p className="field-label">{label}</p><p className="font-display mt-1 text-2xl font-semibold leading-tight sm:text-3xl">{value}</p><p className="mt-1 text-xs text-muted-foreground">{sub}</p></div>)}</section>
+    <section className="dashboard-metrics" aria-label="Monthly financial summary">{metrics.map(([label,value,sub])=><MetricCard key={label} label={label} value={value} detail={sub} />)}</section>
     <InvestmentSimulator />
     <div className="dashboard-grid">
     <div className="contents">

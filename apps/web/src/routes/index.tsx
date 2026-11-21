@@ -1,136 +1,69 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-
-import { auth, getAccessToken, setAccessToken } from "@/lib/api";
-import { FinanceDashboard } from "@/components/finance-dashboard";
-import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { InvestmentSimulator } from "@/components/investment-simulator";
+import { ThemeToggle } from "@/components/theme-provider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Overview · Financial Litter" },
-      {
-        name: "description",
-        content: "Review accounts, income, spending, savings and investment records.",
-      },
-      { property: "og:title", content: "Financial Litter" },
-      {
-        property: "og:description",
-        content: "Review accounts, income, spending, savings and investment records.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { title: "FinLitter — Understand money. Explore decisions." },
+      { name: "description", content: "Practical personal finance tools for students: learn the trade-offs, test assumptions and organize your money." },
     ],
   }),
-  component: Index,
+  component: LandingPage,
 });
 
-function Index() {
-  const navigate = useNavigate();
-  const [checked, setChecked] = useState(false);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+function LandingPage() {
+  return <main className="marketing-site">
+    <header className="marketing-nav">
+      <Link to="/" className="brand-lockup" aria-label="FinLitter home"><span className="brand-mark">F</span><span>FinLitter</span></Link>
+      <nav aria-label="Public navigation"><a href="#learn">Learn</a><a href="#tools">Tools</a><Link to="/login">Log in</Link><ThemeToggle /><Link className="button button--primary marketing-nav__cta" to="/signup">Get early access</Link></nav>
+    </header>
 
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 8000);
-
-    async function checkSession() {
-      try {
-        const token = getAccessToken();
-        if (token) {
-          if (active) setChecked(true);
-          return;
-        }
-
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/auth/refresh`,
-          { method: "POST", credentials: "include", signal: controller.signal }
-        );
-
-        if (res.status === 401 || res.status === 403) {
-          if (active) void navigate({ to: "/login", replace: true });
-          return;
-        }
-        if (!res.ok) {
-          throw new Error(`The API returned ${res.status}.`);
-        }
-
-        const json = await res.json();
-        if (typeof json.accessToken !== "string" || !json.accessToken) {
-          throw new Error("The API response did not include an access token.");
-        }
-        setAccessToken(json.accessToken);
-        if (active) setChecked(true);
-      } catch (error) {
-        if (!active) return;
-        setSessionError(
-          error instanceof DOMException && error.name === "AbortError"
-            ? "The API did not respond within 8 seconds. Make sure the backend is running on port 3000, then retry."
-            : error instanceof TypeError
-              ? "Could not connect to the API. Make sure the backend is running on port 3000, then retry."
-              : error instanceof Error
-                ? error.message
-                : "Could not check your session. Please retry."
-        );
-        setChecked(true);
-      } finally {
-        window.clearTimeout(timeout);
-      }
-    }
-
-    void checkSession();
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [navigate, retryCount]);
-
-  async function handleSignOut() {
-    await auth.logout();
-    navigate({ to: "/login", replace: true });
-  }
-
-  if (!checked && !sessionError) {
-    return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-        <span className="text-sm text-muted-foreground">Loading…</span>
+    <section className="marketing-hero">
+      <div className="marketing-hero__copy">
+        <p className="product-eyebrow"><span className="eyebrow-dot" /> Built for the first money decisions</p>
+        <h1>Understand money.<br /><em>Explore decisions.</em><br />Build confidence.</h1>
+        <p className="marketing-hero__lead">A practical place for college students in India to learn personal finance by working through their own assumptions, plans and records.</p>
+        <div className="marketing-actions"><Link to="/signup" className="button button--primary">Get early access <span aria-hidden="true">↗</span></Link><Link to="/calculators" className="button button--quiet">Explore the tools</Link></div>
+        <p className="marketing-note">Create an account to use the features currently available. Calculations and simulations are estimates, not advice.</p>
       </div>
-    );
-  }
-
-  if (sessionError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="surface-panel w-full max-w-md rounded-lg p-6 text-center sm:p-8">
-          <h1 className="font-display text-xl font-bold">Can’t reach the finance service</h1>
-          <p role="alert" className="mt-3 text-sm text-muted-foreground">{sessionError}</p>
-          <button
-            className="mt-6 w-full rounded-md bg-primary py-3 font-ui text-sm font-semibold text-primary-foreground transition hover:brightness-110"
-            onClick={() => {
-              setChecked(false);
-              setSessionError(null);
-              setRetryCount((count) => count + 1);
-            }}
-          >
-            Retry connection
-          </button>
+      <div className="hero-board" aria-label="FinLitter product overview">
+        <div className="hero-board__top"><span className="eyebrow-label">YOUR MONEY TOOLKIT</span><span className="status-pill"><i /> Learning by doing</span></div>
+        <div className="hero-board__title"><span>Start with a question.</span><strong>Make the trade-off visible.</strong></div>
+        <div className="hero-board__steps">
+          <div><span className="step-index">01</span><span><b>Set the assumptions</b><small>Loan, saving or investing scenario</small></span><span className="step-arrow">↗</span></div>
+          <div><span className="step-index">02</span><span><b>See how it is calculated</b><small>Clear conventions and estimates</small></span><span className="step-arrow">↗</span></div>
+          <div><span className="step-index">03</span><span><b>Keep your records together</b><small>Accounts, activity and stock trades</small></span><span className="step-arrow">↗</span></div>
         </div>
+        <div className="hero-board__foot"><span>Personal finance, made more understandable.</span><span className="hero-board__mark">FL / 01</span></div>
       </div>
-    );
-  }
+    </section>
 
-  return (
-    <AuthenticatedShell active="overview">
-      <div className="space-y-8">
-        <div className="flex flex-wrap items-center justify-end gap-4">
-          <Link to="/login" className="font-ui text-sm text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">Log in as another account</Link>
-          <button onClick={handleSignOut} className="rounded-md border border-border bg-secondary/40 px-4 py-2 font-ui text-sm font-semibold text-foreground transition hover:bg-secondary">Sign out</button>
-        </div>
-        <FinanceDashboard />
+    <section className="value-strip" id="learn" aria-label="FinLitter approach">
+      <div><span>01</span><p><b>Understand</b><small>Learn what the numbers describe.</small></p></div>
+      <div><span>02</span><p><b>Explore</b><small>Change assumptions and compare scenarios.</small></p></div>
+      <div><span>03</span><p><b>Build confidence</b><small>Organize the financial picture you control.</small></p></div>
+    </section>
+
+    <section className="marketing-tools" id="tools">
+      <div className="section-intro"><p className="product-eyebrow">A useful starting point</p><h2>Tools for decisions you are already facing.</h2><p>Begin with a calculation. Explore an investment scenario. Keep your real records separate from modelled outcomes.</p></div>
+      <div className="tool-grid">
+        <article className="tool-card tool-card--calculator"><span className="tool-card__number">01 / CALCULATE</span><div className="tool-card__icon" aria-hidden="true">∑</div><h3>Make the costs easier to compare.</h3><p>Estimate a loan EMI, regular investment growth, CAGR or fixed deposit maturity. Every result explains the assumptions behind it.</p><Link to="/calculators">Explore financial calculators <span aria-hidden="true">→</span></Link></article>
+        <article className="tool-card tool-card--portfolio"><span className="tool-card__number">02 / RECORD</span><div className="tool-card__icon" aria-hidden="true">↗</div><h3>Keep a clearer investment record.</h3><p>Track completed stock trades, FIFO cost basis and prices you enter. Missing and stale prices stay visible as incomplete valuations.</p><Link to="/investments">See portfolio tools <span aria-hidden="true">→</span></Link></article>
+        <article className="tool-card tool-card--market"><span className="tool-card__number">03 / FOLLOW</span><div className="tool-card__icon" aria-hidden="true">⌁</div><h3>Read sourced market events.</h3><p>Browse processed filings and market events from configured sources, with source links and event history where available.</p><Link to="/news">Explore the news feed <span aria-hidden="true">→</span></Link></article>
       </div>
-    </AuthenticatedShell>
-  );
+    </section>
+
+    <section className="simulation-demo" aria-labelledby="simulation-demo-heading">
+      <div className="simulation-demo__intro"><p className="product-eyebrow">Try a model, not a promise</p><h2 id="simulation-demo-heading">Explore how assumptions shape a long-term scenario.</h2><p>The investment simulator generates hypothetical paths using stated return, volatility and correlation assumptions. Outcomes are conditional on the model and are not predictions or guarantees.</p><Link to="/signup" className="text-link">Save your financial workspace <span aria-hidden="true">→</span></Link></div>
+      <div className="simulation-demo__panel"><InvestmentSimulator /></div>
+    </section>
+
+    <section className="early-access">
+      <div><p className="product-eyebrow">Take the next step</p><h2>Start with the questions you have.</h2><p>Use the tools to learn, test your assumptions and build a financial picture that is yours.</p></div>
+      <Link to="/signup" className="button button--light">Get early access <span aria-hidden="true">↗</span></Link>
+    </section>
+
+    <footer className="marketing-footer"><Link to="/" className="brand-lockup"><span className="brand-mark">F</span><span>FinLitter</span></Link><p>Understand money. Explore decisions. Build financial confidence.</p><div><Link to="/login">Log in</Link><Link to="/signup">Create account</Link></div></footer>
+  </main>;
 }
