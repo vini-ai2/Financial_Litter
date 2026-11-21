@@ -39,7 +39,7 @@ function SignupPage() {
     try {
       await auth.signup({ email: parsed.data.email, password: parsed.data.password, firstName: parsed.data.firstName, lastName: parsed.data.lastName, phone: parsed.data.mobileNumber });
       await auth.login(parsed.data.email, parsed.data.password);
-      await navigate({ to: "/" });
+      await navigate({ to: "/dashboard" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {

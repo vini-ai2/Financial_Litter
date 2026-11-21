@@ -32,7 +32,7 @@ function LoginPage() {
     setLoading(true);
     try {
       await auth.login(parsed.data.email, parsed.data.password);
-      await navigate({ to: "/" });
+      await navigate({ to: "/dashboard" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
