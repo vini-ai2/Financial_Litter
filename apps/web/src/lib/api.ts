@@ -167,11 +167,24 @@ export const financeApi = {
   updateTransaction: (id: string, data: unknown) => requestJson<any>(`/transactions/${id}`, send("PUT", data)),
   deleteTransaction: (id: string) => requestJson<void>(`/transactions/${id}`, send("DELETE")),
   createLoan: (data: unknown) => requestJson<any>("/finance/loans", send("POST", data)),
+  loans: () => requestJson<any[]>("/finance/loans"),
   updateLoan: (id: string, data: unknown) => requestJson<any>(`/finance/loans/${id}`, send("PUT", data)),
   deleteLoan: (id: string) => requestJson<void>(`/finance/loans/${id}`, send("DELETE")),
   createBudget: (data: unknown) => requestJson<any>("/finance/budgets", send("POST", data)),
   updateBudget: (id: string, data: unknown) => requestJson<any>(`/finance/budgets/${id}`, send("PUT", data)),
   deleteBudget: (id: string) => requestJson<void>(`/finance/budgets/${id}`, send("DELETE")),
+  goals: (status?: GoalStatus) => requestJson<FinancialGoal[]>(`/finance/goals${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+  eligibleGoalTransactions: () => requestJson<Array<{ id: string; amount: string; type: "INCOME" | "EXPENSE"; category: string; description: string; date: string }>>("/finance/goals/eligible-transactions"),
+  goal: (id: string) => requestJson<FinancialGoal>(`/finance/goals/${encodeURIComponent(id)}`),
+  createGoal: (data: CreateFinancialGoal) => requestJson<FinancialGoal>("/finance/goals", send("POST", data)),
+  updateGoal: (id: string, data: Partial<Pick<CreateFinancialGoal, "goalName" | "targetAmount" | "targetDate" | "contributionFrequency">> & { plannedContributionAmount?: string | null }) => requestJson<FinancialGoal>(`/finance/goals/${encodeURIComponent(id)}`, send("PUT", data)),
+  setGoalStatus: (id: string, status: GoalStatus) => requestJson<FinancialGoal>(`/finance/goals/${encodeURIComponent(id)}/status`, send("PATCH", { status })),
+  archiveGoal: (id: string) => requestJson<FinancialGoal>(`/finance/goals/${encodeURIComponent(id)}`, send("DELETE")),
+  goalContributions: (id: string) => requestJson<GoalContribution[]>(`/finance/goals/${encodeURIComponent(id)}/contributions`),
+  addGoalContribution: (id: string, data: { amount: string; note?: string; effectiveAt?: string; idempotencyKey: string }) => requestJson<GoalContribution>(`/finance/goals/${encodeURIComponent(id)}/contributions`, send("POST", data)),
+  linkGoalTransaction: (id: string, transactionId: string) => requestJson<GoalContribution>(`/finance/goals/${encodeURIComponent(id)}/transactions`, send("POST", { transactionId })),
+  reverseGoalContribution: (id: string, contributionId: string) => requestJson<GoalContribution>(`/finance/goals/${encodeURIComponent(id)}/contributions/${encodeURIComponent(contributionId)}/reversals`, send("POST")),
+  goalPlan: (id: string, annualReturnPercent?: number) => requestJson<GoalPlan>(`/finance/goals/${encodeURIComponent(id)}/planning${annualReturnPercent === undefined ? "" : `?annualReturnPercent=${encodeURIComponent(String(annualReturnPercent))}`}`),
   createBill: (data: unknown) => requestJson<any>("/finance/bills", send("POST", data)),
   updateBill: (id: string, data: unknown) => requestJson<any>(`/finance/bills/${id}`, send("PUT", data)),
   deleteBill: (id: string) => requestJson<void>(`/finance/bills/${id}`, send("DELETE")),
@@ -184,6 +197,33 @@ export const financeApi = {
     requestJson<{ annualizedReturn: number }>("/finance/calculators/cagr", send("POST", data)),
   calculateFd: (data: { principal: number; annualNominalRatePercent: number; years: number; compoundingFrequency: number }) =>
     requestJson<{ maturityValue: number }>("/finance/calculators/fd", send("POST", data)),
+};
+
+export type GoalStatus = "ACTIVE" | "PAUSED" | "COMPLETED" | "ARCHIVED";
+export type GoalCategory = "SAVINGS" | "PURCHASE" | "EMERGENCY_FUND" | "DEBT_REPAYMENT" | "INVESTMENT";
+export type GoalFrequency = "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "ANNUALLY";
+export type CreateFinancialGoal = {
+  goalName: string; category: GoalCategory; targetAmount: string; startingBalance?: string;
+  targetDate: string; contributionFrequency: GoalFrequency; plannedContributionAmount?: string;
+  linkedLoanId?: string; includePortfolio: boolean;
+};
+export type FinancialGoal = CreateFinancialGoal & {
+  id: string; status: GoalStatus; createdAt: string; updatedAt: string;
+  currentAmount: string; progressAmount: string; progressPercent: number; shortfall: string;
+  contributionTotal: string; portfolioCostBasis: string | null; loanOutstanding: string | null;
+  loanPrincipalReduction: string | null; sourceStatus: "CURRENT" | "UNAVAILABLE";
+};
+export type GoalContribution = {
+  id: string; budgetId: string; amount: string; type: "MANUAL" | "TRANSACTION" | "REVERSAL";
+  effectiveAt: string; note: string | null; sourceTransactionId: string | null;
+  reversesContributionId: string | null; active: boolean; reversedAt: string | null; createdAt: string;
+};
+export type GoalPlan = {
+  shortfall: string; periodsUntilDeadline: number; requiredContributionPerPeriod: string | null;
+  plannedContributionPerPeriod: string | null; plannedShortfallPerPeriod: string | null;
+  completionEstimateMonths?: number | null;
+  scenarios: Array<{ annualReturnPercent: number; monthsToTarget: number | null }>;
+  assumptions: string;
 };
 
 export const stockInvestmentApi = {

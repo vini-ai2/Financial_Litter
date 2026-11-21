@@ -18,6 +18,31 @@ export type UpdateTransactionInput = {
   date?: string;
 };
 
+async function refreshLinkedGoalContribution(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  transactionId: string,
+  transaction: { amount: Prisma.Decimal; date: Date; description: string; category: string } | null,
+) {
+  const linked = await tx.goalContribution.findUnique({ where: { sourceTransactionId: transactionId }, include: { goal: { select: { status: true } } } });
+  if (!linked || linked.userId !== userId || !linked.active || linked.goal.status === "COMPLETED" || linked.goal.status === "ARCHIVED") return;
+  if (!transaction) {
+    await tx.goalContribution.update({
+      where: { id: linked.id },
+      data: { active: false, reversedAt: new Date() },
+    });
+    return;
+  }
+  await tx.goalContribution.update({
+    where: { id: linked.id },
+    data: {
+      amount: transaction.amount,
+      effectiveAt: transaction.date,
+      note: transaction.description || transaction.category,
+    },
+  });
+}
+
 function getBalanceDelta(
   amount: Prisma.Decimal | number,
   type: "INCOME" | "EXPENSE"
@@ -245,6 +270,8 @@ export async function updateTransaction(
         },
       });
 
+    await refreshLinkedGoalContribution(tx, userId, id, updated);
+
     if (!balanceDelta.isZero()) {
       await tx.account.update({
         where: {
@@ -288,6 +315,8 @@ export async function deleteTransaction(
 
     // Reverse the original transaction effect.
     const reverseDelta = oldDelta.negated();
+
+    await refreshLinkedGoalContribution(tx, userId, id, null);
 
     await tx.transaction.delete({
       where: {

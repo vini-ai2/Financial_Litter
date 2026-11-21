@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 
 import { financeApi, restoreAccessToken, stockInvestmentApi, type PortfolioSnapshotSummary, type PortfolioSnapshotHolding } from "@/lib/api";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { PageIntro } from "@/components/ui/product";
 
 type LegacyInvestment = {
   id: string;
@@ -317,11 +318,9 @@ function InvestmentsPage() {
   return (
     <AuthenticatedShell active="investments">
       <div className="investment-page space-y-7">
-        <header className="flex flex-wrap items-end justify-between gap-5">
-          <div className="space-y-2">
-            <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Investments</h1>
-            <p className="max-w-2xl text-base leading-7 text-muted-foreground">Record completed stock trades and review holdings, cost basis and history.</p>
-          </div>
+        <>
+        <PageIntro eyebrow="PORTFOLIO RECORDS" title="Investments" description="Record completed stock trades and review holdings, cost basis, valuation and history." />
+        <header className="investment-toolbar flex flex-wrap items-center justify-end gap-2">
           <div className="flex gap-2">
             <button className={secondaryButton} onClick={() => void load()} disabled={loading}>Refresh</button>
             <button className={button} type="button" onClick={() => setTradeOpen(true)}>Record trade</button>
@@ -346,6 +345,7 @@ function InvestmentsPage() {
             </dialog>
           </div>
         </header>
+        </>
 
         <section className="portfolio-summary" aria-label="Portfolio overview">
           <div><p className="field-label">Active positions</p><p className="font-display mt-1 text-xl font-semibold tabular-nums">{data ? data.portfolio.summary.activePositionCount : "—"}</p></div>

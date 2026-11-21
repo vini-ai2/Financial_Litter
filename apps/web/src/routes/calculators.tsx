@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { financeApi, restoreAccessToken } from "@/lib/api";
+import { PageIntro } from "@/components/ui/product";
 
 const inputClass = "field-input";
 const buttonClass = "rounded-md bg-primary px-4 py-2.5 font-ui text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60";
@@ -46,12 +47,8 @@ function CalculatorsPage() {
 
   return (
     <AuthenticatedShell active="calculators">
-      <div className="space-y-7 pb-10">
-        <header className="space-y-2 pt-6">
-          <p className="field-label uppercase tracking-[0.18em]">Plan with clarity</p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Financial calculators</h1>
-          <p className="max-w-3xl text-base leading-7 text-muted-foreground">Estimate loan payments, investment growth and fixed deposit maturity. Each result is calculated by the FinLitter finance API using the assumptions shown below.</p>
-        </header>
+      <div className="calculator-page space-y-7 pb-10">
+        <PageIntro eyebrow="LEARN THE NUMBERS" title="Financial calculators" description="Estimate loan payments, investment growth and fixed deposit maturity. Each result comes from the finance service and shows the assumptions used." />
 
         <div className="grid gap-5 lg:grid-cols-2">
           <CalculatorCard
