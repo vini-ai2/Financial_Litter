@@ -25,6 +25,7 @@ model User {
   stockPrices      StockPrice[]
   portfolioSnapshots PortfolioSnapshot[]
   loans            Loan[]
+  goalContributions GoalContribution[]
   monthlySnapshots MonthlySnapshot[]
   sessions         Session[]
   newsPreference   NewsPreference?
@@ -232,16 +233,52 @@ model Bill {
 }
 
 model Budget {
-  id            String   @id @default(uuid())
-  userId        String
-  goalName      String
-  targetAmount  Decimal
-  currentAmount Decimal  @default(0)
-  targetDate    DateTime
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id])
+  id                       String                    @id @default(uuid())
+  userId                   String
+  goalName                 String
+  targetAmount             Decimal
+  currentAmount            Decimal                   @default(0)
+  targetDate               DateTime
+  category                 GoalCategory              @default(SAVINGS)
+  status                   GoalStatus                @default(ACTIVE)
+  startingBalance          Decimal                   @default(0) @db.Decimal(38, 12)
+  contributionFrequency    GoalContributionFrequency @default(MONTHLY)
+  plannedContributionAmount Decimal?                 @db.Decimal(38, 12)
+  linkedLoanId             String?
+  includePortfolio         Boolean                   @default(false)
+  portfolioOwnerId         String?                   @unique
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  user                     User                      @relation(fields: [userId], references: [id])
+  contributions            GoalContribution[]
 
   @@index([userId])
+  @@unique([userId, id])
+  @@unique([userId, linkedLoanId])
+  @@index([userId, status, targetDate])
+}
+
+model GoalContribution {
+  id                     String                   @id @default(uuid())
+  userId                 String
+  budgetId               String
+  amount                 Decimal                  @db.Decimal(38, 12)
+  type                   GoalContributionType
+  effectiveAt            DateTime                 @db.Timestamp(3)
+  note                   String?                  @db.VarChar(300)
+  idempotencyKey         String                   @db.VarChar(120)
+  sourceTransactionId    String?                  @unique
+  reversesContributionId String?                  @unique
+  active                 Boolean                  @default(true)
+  reversedAt             DateTime?                @db.Timestamp(3)
+  createdAt              DateTime                 @default(now())
+  user                   User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal                   Budget                   @relation(fields: [userId, budgetId], references: [userId, id], onDelete: Cascade)
+  reverses               GoalContribution?        @relation("GoalContributionReversals", fields: [reversesContributionId], references: [id], onDelete: Restrict)
+  reversal               GoalContribution?        @relation("GoalContributionReversals")
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, budgetId, effectiveAt])
 }
 
 model NewsSource {
@@ -474,6 +511,35 @@ enum InvestmentCategory {
   FIXED_INCOME
   ETF
   MUTUAL_FUND
+}
+
+enum GoalCategory {
+  SAVINGS
+  PURCHASE
+  EMERGENCY_FUND
+  DEBT_REPAYMENT
+  INVESTMENT
+}
+
+enum GoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum GoalContributionFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+enum GoalContributionType {
+  MANUAL
+  TRANSACTION
+  REVERSAL
 }
 
 enum StockExchange {
