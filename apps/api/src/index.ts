@@ -6,6 +6,7 @@ import transactionRoutes from "./routes/transactions";
 import financeRoutes from "./routes/finance";
 import stockTradeRoutes from "./routes/stockTrades";
 import newsRoutes from "./routes/news";
+import goalsRoutes from "./routes/goals";
 import cookieParser from "cookie-parser";
 import cors from 'cors'
 
@@ -24,6 +25,7 @@ app.use("/income-sources", incomeSourcesRouter);
 app.use("/accounts", accountRoutes);
 app.use("/transactions", transactionRoutes);
 app.use("/finance", financeRoutes);
+app.use("/finance/goals", goalsRoutes);
 app.use("/investments/stocks", stockTradeRoutes);
 app.use("/news", newsRoutes);
 
