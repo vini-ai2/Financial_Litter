@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { PageIntro } from "@/components/ui/product";
 import { newsApi, restoreAccessToken, type NewsCategory, type NewsFeedFilters, type NewsPreferences } from "@/lib/api";
 
 const categories: Array<{ value: NewsCategory; label: string }> = [
@@ -131,12 +132,7 @@ function NewsPage() {
   return (
     <AuthenticatedShell active="news">
       <div className="news-page">
-        <header className="news-header">
-          <div>
-            <p className="news-kicker">Market</p>
-            <h1 className="font-display">News</h1>
-            <p className="news-deck">Filings and market events from configured sources.</p>
-          </div>
+        <PageIntro eyebrow="SOURCED MARKET EVENTS" title="Market events" description="Filings and events from configured sources, with source links and revision context where available." actions={
           <details className="news-preferences">
             <summary>Preferences</summary>
             <form onSubmit={(event) => void savePreferences(event)} className="news-preferences__form">
@@ -160,7 +156,7 @@ function NewsPage() {
               {preferencesError && <p role="alert" className="news-error">{preferencesError}</p>}
             </form>
           </details>
-        </header>
+        } />
 
         <form ref={filterForm} className="news-filters" onSubmit={submitFilters}>
           <label><span className="field-label">Category</span><select className="field-input" name="category" defaultValue={filters.category ?? ""}><option value="">All categories</option>{categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
