@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { InvestmentSimulator } from "@/components/investment-simulator";
 import { ThemeToggle } from "@/components/theme-provider";
+import { restoreAccessToken } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,6 +15,22 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  const navigate = useNavigate();
+
+  // Keep the public landing page for visitors while preserving the original
+  // finance-overview entry point for users with an active refresh session.
+  useEffect(() => {
+    let active = true;
+    restoreAccessToken()
+      .then((hasSession) => {
+        if (active && hasSession) void navigate({ to: "/dashboard", replace: true });
+      })
+      .catch(() => {
+        // The public landing page remains available when the API is offline.
+      });
+    return () => { active = false; };
+  }, [navigate]);
+
   return <main className="marketing-site">
     <header className="marketing-nav">
       <Link to="/" className="brand-lockup" aria-label="FinLitter home"><span className="brand-mark">F</span><span>FinLitter</span></Link>

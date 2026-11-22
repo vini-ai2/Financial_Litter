@@ -16,8 +16,13 @@ import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as InvestmentsRouteImport } from './routes/investments'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as PulseRouteImport } from './routes/pulse'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as NewsEventIdRouteImport } from './routes/news/$eventId'
+import { Route as PulseEventIdRouteImport } from './routes/pulse.$eventId'
+import { Route as PulsePreferencesRouteImport } from './routes/pulse.preferences'
+import { Route as PulseSavedRouteImport } from './routes/pulse.saved'
+import { Route as PulseWatchlistRouteImport } from './routes/pulse.watchlist'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,6 +59,11 @@ const NewsRoute = NewsRouteImport.update({
   path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PulseRoute = PulseRouteImport.update({
+  id: '/pulse',
+  path: '/pulse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -64,6 +74,26 @@ const NewsEventIdRoute = NewsEventIdRouteImport.update({
   path: '/$eventId',
   getParentRoute: () => NewsRoute,
 } as any)
+const PulseEventIdRoute = PulseEventIdRouteImport.update({
+  id: '/$eventId',
+  path: '/$eventId',
+  getParentRoute: () => PulseRoute,
+} as any)
+const PulsePreferencesRoute = PulsePreferencesRouteImport.update({
+  id: '/preferences',
+  path: '/preferences',
+  getParentRoute: () => PulseRoute,
+} as any)
+const PulseSavedRoute = PulseSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => PulseRoute,
+} as any)
+const PulseWatchlistRoute = PulseWatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => PulseRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,8 +103,13 @@ export interface FileRoutesByFullPath {
   '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/pulse': typeof PulseRouteWithChildren
   '/signup': typeof SignupRoute
   '/news/$eventId': typeof NewsEventIdRoute
+  '/pulse/$eventId': typeof PulseEventIdRoute
+  '/pulse/preferences': typeof PulsePreferencesRoute
+  '/pulse/saved': typeof PulseSavedRoute
+  '/pulse/watchlist': typeof PulseWatchlistRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,8 +119,13 @@ export interface FileRoutesByTo {
   '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/pulse': typeof PulseRouteWithChildren
   '/signup': typeof SignupRoute
   '/news/$eventId': typeof NewsEventIdRoute
+  '/pulse/$eventId': typeof PulseEventIdRoute
+  '/pulse/preferences': typeof PulsePreferencesRoute
+  '/pulse/saved': typeof PulseSavedRoute
+  '/pulse/watchlist': typeof PulseWatchlistRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,8 +136,13 @@ export interface FileRoutesById {
   '/investments': typeof InvestmentsRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRouteWithChildren
+  '/pulse': typeof PulseRouteWithChildren
   '/signup': typeof SignupRoute
   '/news/$eventId': typeof NewsEventIdRoute
+  '/pulse/$eventId': typeof PulseEventIdRoute
+  '/pulse/preferences': typeof PulsePreferencesRoute
+  '/pulse/saved': typeof PulseSavedRoute
+  '/pulse/watchlist': typeof PulseWatchlistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,8 +154,13 @@ export interface FileRouteTypes {
     | '/investments'
     | '/login'
     | '/news'
+    | '/pulse'
     | '/signup'
     | '/news/$eventId'
+    | '/pulse/$eventId'
+    | '/pulse/preferences'
+    | '/pulse/saved'
+    | '/pulse/watchlist'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,8 +170,13 @@ export interface FileRouteTypes {
     | '/investments'
     | '/login'
     | '/news'
+    | '/pulse'
     | '/signup'
     | '/news/$eventId'
+    | '/pulse/$eventId'
+    | '/pulse/preferences'
+    | '/pulse/saved'
+    | '/pulse/watchlist'
   id:
     | '__root__'
     | '/'
@@ -131,8 +186,13 @@ export interface FileRouteTypes {
     | '/investments'
     | '/login'
     | '/news'
+    | '/pulse'
     | '/signup'
     | '/news/$eventId'
+    | '/pulse/$eventId'
+    | '/pulse/preferences'
+    | '/pulse/saved'
+    | '/pulse/watchlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -143,6 +203,7 @@ export interface RootRouteChildren {
   InvestmentsRoute: typeof InvestmentsRoute
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRouteWithChildren
+  PulseRoute: typeof PulseRouteWithChildren
   SignupRoute: typeof SignupRoute
 }
 
@@ -197,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pulse': {
+      id: '/pulse'
+      path: '/pulse'
+      fullPath: '/pulse'
+      preLoaderRoute: typeof PulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -211,6 +279,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsEventIdRouteImport
       parentRoute: typeof NewsRoute
     }
+    '/pulse/$eventId': {
+      id: '/pulse/$eventId'
+      path: '/$eventId'
+      fullPath: '/pulse/$eventId'
+      preLoaderRoute: typeof PulseEventIdRouteImport
+      parentRoute: typeof PulseRoute
+    }
+    '/pulse/preferences': {
+      id: '/pulse/preferences'
+      path: '/preferences'
+      fullPath: '/pulse/preferences'
+      preLoaderRoute: typeof PulsePreferencesRouteImport
+      parentRoute: typeof PulseRoute
+    }
+    '/pulse/saved': {
+      id: '/pulse/saved'
+      path: '/saved'
+      fullPath: '/pulse/saved'
+      preLoaderRoute: typeof PulseSavedRouteImport
+      parentRoute: typeof PulseRoute
+    }
+    '/pulse/watchlist': {
+      id: '/pulse/watchlist'
+      path: '/watchlist'
+      fullPath: '/pulse/watchlist'
+      preLoaderRoute: typeof PulseWatchlistRouteImport
+      parentRoute: typeof PulseRoute
+    }
   }
 }
 
@@ -224,6 +320,22 @@ const NewsRouteChildren: NewsRouteChildren = {
 
 const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
 
+interface PulseRouteChildren {
+  PulseEventIdRoute: typeof PulseEventIdRoute
+  PulsePreferencesRoute: typeof PulsePreferencesRoute
+  PulseSavedRoute: typeof PulseSavedRoute
+  PulseWatchlistRoute: typeof PulseWatchlistRoute
+}
+
+const PulseRouteChildren: PulseRouteChildren = {
+  PulseEventIdRoute: PulseEventIdRoute,
+  PulsePreferencesRoute: PulsePreferencesRoute,
+  PulseSavedRoute: PulseSavedRoute,
+  PulseWatchlistRoute: PulseWatchlistRoute,
+}
+
+const PulseRouteWithChildren = PulseRoute._addFileChildren(PulseRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalculatorsRoute: CalculatorsRoute,
@@ -232,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvestmentsRoute: InvestmentsRoute,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRouteWithChildren,
+  PulseRoute: PulseRouteWithChildren,
   SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport

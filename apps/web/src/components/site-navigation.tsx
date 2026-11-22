@@ -25,7 +25,7 @@ export function SiteNavigation({ active }: SiteNavigationProps) {
       <Link to="/goals" aria-current={active === "goals" ? "page" : undefined} className={linkClass("goals")}>Goals</Link>
       <Link to="/investments" aria-current={active === "investments" ? "page" : undefined} className={linkClass("investments")}>Investments</Link>
       <Link to="/calculators" aria-current={active === "calculators" ? "page" : undefined} className={linkClass("calculators")}>Calculators</Link>
-      <Link to="/news" aria-current={active === "news" ? "page" : undefined} className={linkClass("news")}>Market events</Link>
+      <Link to="/pulse" aria-current={active === "news" ? "page" : undefined} className={linkClass("news")}>Pulse</Link>
     </nav>
     <div className="app-navigation__account"><ThemeToggle /><button type="button" className="app-navigation__signout" onClick={() => void signOut()}>Sign out</button></div>
   </header>;

@@ -30,7 +30,7 @@ function NewsPage() {
   const [authorized, setAuthorized] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [options, setOptions] = useState<{ categories: NewsCategory[]; regions: string[] } | null>(null);
-  const [preferences, setPreferences] = useState<NewsPreferences>({ categories: [], regions: [] });
+  const [preferences, setPreferences] = useState<NewsPreferences>({ categories: [], regions: [], companies: [], industries: [], topics: [] });
   const [filters, setFilters] = useState<NewsFeedFilters>({ page: 1, pageSize: 20 });
   const [pageCount, setPageCount] = useState(0);
   const [total, setTotal] = useState(0);
@@ -113,6 +113,9 @@ function NewsPage() {
       const updated = await newsApi.savePreferences({
         categories: values.getAll("preferredCategory").map(String) as NewsCategory[],
         regions: values.getAll("preferredRegion").map(String),
+        companies: preferences.companies,
+        industries: preferences.industries,
+        topics: preferences.topics,
       });
       setPreferences(updated);
       setNotice("News preferences saved.");

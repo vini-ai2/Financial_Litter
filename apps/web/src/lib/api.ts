@@ -138,7 +138,14 @@ async function requestJson<T>(path: string, options: RequestInit = {}): Promise<
   const response = await apiFetch(path, options);
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error ?? "The request could not be completed");
+    const message = body.error ?? body.message ?? "The request could not be completed";
+    if (response.status === 401 && !["/auth/login", "/auth/signup", "/auth/refresh"].includes(path)) {
+      clearAccessToken();
+      if (typeof window !== "undefined" && window.location.pathname !== "/login" && window.location.pathname !== "/signup") {
+        window.location.replace("/login");
+      }
+    }
+    throw new Error(message);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -297,8 +304,8 @@ export type PortfolioSnapshotHolding = {
 };
 
 export type NewsCategory = "COMPANY_DEVELOPMENT" | "EARNINGS" | "REGULATORY_ACTION" | "MARKET_ECONOMIC" | "CORPORATE_ACTION" | "RISK";
-export type NewsFeedFilters = { page?: number; pageSize?: number; category?: NewsCategory; region?: string; company?: string; from?: string; to?: string };
-export type NewsPreferences = { categories: NewsCategory[]; regions: string[] };
+export type NewsFeedFilters = { page?: number; pageSize?: number; category?: NewsCategory; region?: string; company?: string; from?: string; to?: string; q?: string; mode?: "all" | "personalized" | "saved" | "watched" };
+export type NewsPreferences = { categories: NewsCategory[]; regions: string[]; companies: string[]; industries: string[]; topics: string[]; entities?: Array<{ id: string; canonicalName: string; type: "COMPANY" | "SECURITY" | "REGULATOR" | "SECTOR"; jurisdiction: string | null }>; topicOptions?: string[] };
 
 export const newsApi = {
   events: (filters: NewsFeedFilters) => {
@@ -310,6 +317,13 @@ export const newsApi = {
   filters: () => requestJson<{ categories: NewsCategory[]; regions: string[] }>("/news/filters"),
   preferences: () => requestJson<NewsPreferences>("/news/preferences"),
   savePreferences: (preferences: NewsPreferences) => requestJson<NewsPreferences>("/news/preferences", send("PUT", preferences)),
+  save: (id: string) => requestJson<void>(`/news/events/${encodeURIComponent(id)}/save`, send("POST")),
+  unsave: (id: string) => requestJson<void>(`/news/events/${encodeURIComponent(id)}/save`, send("DELETE")),
+  watchlist: () => requestJson<Array<{ id: string; kind: "COMPANY" | "INDUSTRY" | "TOPIC"; key: string; entity: { id: string; canonicalName: string } | null }>>("/news/watchlist"),
+  addWatch: (kind: "COMPANY" | "INDUSTRY" | "TOPIC", value: string) => requestJson<any>("/news/watchlist", send("POST", { kind, value })),
+  removeWatch: (id: string) => requestJson<void>(`/news/watchlist/${encodeURIComponent(id)}`, send("DELETE")),
+  history: () => requestJson<any[]>("/news/history"),
+  sourceStatus: () => requestJson<{ sources: Array<{ name: string; organization: string; url: string; lastRetrievedAt: string | null; lastSuccessfulFetchAt: string | null; documentCount: number; evidenceCount: number; latestFailureAt: string | null; latestFailureStage: string | null; latestFailureMessage: string | null; latestProcessingFailureAt: string | null; latestProcessingFailureStage: string | null; latestProcessingFailureMessage: string | null; attempts: number | null; status: "CURRENT" | "STALE" | "PENDING" | "ERROR" | "UNSUPPORTED" }> }>("/news/source-status"),
 };
 
 export const auth = {

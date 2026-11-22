@@ -3,6 +3,13 @@ import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/rea
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return { ...actual, restoreAccessToken: vi.fn().mockResolvedValue(false) };
+});
+vi.mock("@/components/finance-dashboard", () => ({ FinanceDashboard: () => <div>Financial overview</div> }));
+
+import { restoreAccessToken } from "@/lib/api";
 import { routeTree } from "@/routeTree.gen";
 
 function renderAt(path: string) {
@@ -12,7 +19,7 @@ function renderAt(path: string) {
     context: { queryClient },
     history: createMemoryHistory({ initialEntries: [path] }),
   });
-  return render(<RouterProvider router={router} />);
+  return { ...render(<RouterProvider router={router} />), router };
 }
 
 afterEach(() => {
@@ -20,13 +27,22 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Assert only that the router mounts and paints, never page content:
-// routes are rewritten as the app is built and this must keep passing.
 describe("App routing", () => {
-  it("renders the index route", async () => {
-    const { container } = renderAt("/");
+  it("keeps the public landing page at root for signed-out visitors", async () => {
+    vi.mocked(restoreAccessToken).mockResolvedValue(false);
+    const { container, router } = renderAt("/");
 
     await waitFor(() => expect(container.firstChild).not.toBeNull());
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+    expect(container.textContent).toContain("Understand money.");
+  });
+
+  it("routes an authenticated root visit to the original financial overview", async () => {
+    vi.mocked(restoreAccessToken).mockResolvedValue(true);
+    const { container, router } = renderAt("/");
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/dashboard"));
+    await waitFor(() => expect(container.textContent).toContain("Financial overview"));
   });
 
   it("renders the not-found route", async () => {
