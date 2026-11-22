@@ -7,6 +7,7 @@ import financeRoutes from "./routes/finance";
 import stockTradeRoutes from "./routes/stockTrades";
 import newsRoutes from "./routes/news";
 import goalsRoutes from "./routes/goals";
+import { scheduleNewsIngestion } from "./services/news/ingestionRunner";
 import cookieParser from "cookie-parser";
 import cors from 'cors'
 
@@ -39,4 +40,9 @@ const PORT = 3000;
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    if (process.env.NEWS_INGESTION_ENABLED === "true") {
+        const minutes = Number(process.env.NEWS_INGESTION_INTERVAL_MINUTES ?? "60");
+        if (Number.isInteger(minutes) && minutes >= 15 && minutes <= 1440) scheduleNewsIngestion(minutes);
+        else console.error("[news ingestion] interval must be an integer between 15 and 1440 minutes; ingestion remains disabled");
+    }
 });
