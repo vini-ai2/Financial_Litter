@@ -2,8 +2,37 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import prisma from "../lib/prisma";
 import { newsPreferencesSchema } from "../controllers/newsController";
-import { getNewsEvent, listNewsEvents } from "../services/news/newsApiService";
+import { buildEventContextualExplanation, getNewsEvent, listNewsEvents, summarizeNewsSourceHealth } from "../services/news/newsApiService";
 import { buildNewsEventWhere, newsFilterSchema, paginationWindow } from "../services/news/newsQuery";
+
+test("source health reports last success, stored item counts and failures only when they are current", () => {
+  const now = Date.parse("2026-11-22T12:00:00.000Z");
+  const source = { name: "RBI releases", organization: "Reserve Bank of India", officialUrl: "https://rbi.org.in/", accessMethod: "RSS", lastRetrievedAt: new Date(now - 60_000), documentCount: 10, evidenceCount: 6 };
+  const failure = { occurredAt: new Date(now - 30_000), stage: "retrieve", attempts: 3, message: "HTTP 503" };
+  const error = summarizeNewsSourceHealth(source, failure, now);
+  assert.equal(error.status, "ERROR");
+  assert.equal(error.documentCount, 10);
+  assert.equal(error.evidenceCount, 6);
+  assert.equal(error.lastSuccessfulFetchAt?.getTime(), source.lastRetrievedAt?.getTime());
+  assert.equal(error.latestFailureMessage, "HTTP 503");
+  assert.equal(error.attempts, 3);
+
+  const recovered = summarizeNewsSourceHealth({ ...source, lastRetrievedAt: new Date(now - 10_000) }, failure, now);
+  assert.equal(recovered.status, "CURRENT");
+  assert.equal(recovered.latestFailureMessage, null);
+  assert.equal(recovered.attempts, null);
+  const processingIssue = summarizeNewsSourceHealth(source, undefined, now, { occurredAt: new Date(now), stage: "intelligence:event-persistence", attempts: 1, message: "Transient event write failure" });
+  assert.equal(processingIssue.status, "CURRENT");
+  assert.equal(processingIssue.latestProcessingFailureMessage, "Transient event write failure");
+});
+
+test("contextual briefs retain sourced facts and qualify category-based interpretation", () => {
+  const brief = buildEventContextualExplanation("MARKET_ECONOMIC", "RBI monetary policy update", "Repo rate decision published by RBI.", ["Reserve Bank of India"], ["evidence-1"]);
+  assert.equal(brief.whatHappened, "Repo rate decision published by RBI.");
+  assert.match(brief.consumerContext, /If this concerns policy rates/);
+  assert.match(brief.uncertainty, /not a sourced prediction/);
+  assert.deepEqual(brief.evidenceIds, ["evidence-1"]);
+});
 
 test("news filters validate and build category, company, region and inclusive date predicates", () => {
   const parsed = newsFilterSchema.safeParse({
@@ -27,6 +56,8 @@ test("news filter parser rejects invalid dates, inverted ranges and excessive pa
   assert.equal(newsFilterSchema.safeParse({ from: "2026-02-30" }).success, false);
   assert.equal(newsFilterSchema.safeParse({ from: "2026-02-02", to: "2026-02-01" }).success, false);
   assert.equal(newsFilterSchema.safeParse({ pageSize: "51" }).success, false);
+  assert.equal(newsFilterSchema.safeParse({ q: "repo rate" }).success, true);
+  assert.equal(newsFilterSchema.safeParse({ q: "  " }).success, false);
 });
 
 test("news preferences accept categories and regions without duplicates", () => {
@@ -35,6 +66,7 @@ test("news preferences accept categories and regions without duplicates", () => 
   if (parsed.success) assert.deepEqual(parsed.data.regions, ["IN", "US"]);
   assert.equal(newsPreferencesSchema.safeParse({ categories: ["EARNINGS", "EARNINGS"], regions: [] }).success, false);
   assert.equal(newsPreferencesSchema.safeParse({ categories: ["NOT_A_CATEGORY"], regions: [] }).success, false);
+  assert.equal(newsPreferencesSchema.safeParse({ categories: [], regions: [], topics: ["inflation", "Inflation"] }).success, false);
 });
 
 test("news routes place authentication middleware before all API handlers", async () => {
@@ -60,7 +92,7 @@ test("market feed paginates sourced events and reports empty feeds without synth
   Object.defineProperty(delegate, "findMany", { configurable: true, value: async (value: unknown) => { query = value; return []; } });
   Object.defineProperty(delegate, "count", { configurable: true, value: async () => 0 });
   try {
-    const result = await listNewsEvents(newsFilterSchema.parse({ page: 2, pageSize: 15 }));
+    const result = await listNewsEvents(newsFilterSchema.parse({ page: 2, pageSize: 15 }), "user-1");
     assert.deepEqual(query.skip, 15);
     assert.equal(query.take, 15);
     assert.deepEqual(result, { items: [], total: 0, page: 2, pageSize: 15, totalPages: 0 });
@@ -75,12 +107,18 @@ test("market feed paginates sourced events and reports empty feeds without synth
 test("source provenance, verification language and revision history are returned for detail views", async () => {
   const delegate = prisma.newsEvent;
   const previous = Object.getOwnPropertyDescriptor(delegate, "findUnique");
+  const historyDelegate = prisma.newsReadHistory;
+  const previousHistory = Object.getOwnPropertyDescriptor(historyDelegate, "upsert");
+  const savedDelegate = prisma.newsSavedEvent;
+  const previousSaved = Object.getOwnPropertyDescriptor(savedDelegate, "findUnique");
   const source = { id: "source-1", name: "Official Exchange", organization: "Example Exchange", officialUrl: "https://example.test", jurisdiction: "IN" };
   const doc = { id: "doc-1", title: "Filing", canonicalUrl: "https://example.test/filing", sourceId: source.id, source, publishedAt: new Date("2026-01-02T10:00:00Z"), retrievedAt: new Date("2026-01-02T10:01:00Z"), contentHash: "a".repeat(64) };
   const revision = { id: "rev-2", version: 2, revisionType: "CORRECTION", eventType: "EARNINGS", classificationConfidence: 0.86, materiality: "MEDIUM", title: "Corrected filing", summary: "Corrected earnings", eventDate: doc.publishedAt, facts: [{ type: "EARNINGS", value: "Net profit corrected" }], entities: [], documents: [{ document: doc }], evidence: [{ documentId: doc.id, sourceId: source.id, field: "content", startOffset: 0, endOffset: 22, quote: "Net profit corrected", source }], createdAt: new Date("2026-01-03T10:00:00Z") };
   Object.defineProperty(delegate, "findUnique", { configurable: true, value: async () => ({ id: "event-1", currentRevision: revision, revisions: [{ ...revision, version: 1, revisionType: "INITIAL", title: "Original filing", evidence: [], documents: [{ document: doc }] }, revision] }) });
+  Object.defineProperty(historyDelegate, "upsert", { configurable: true, value: async () => ({}) });
+  Object.defineProperty(savedDelegate, "findUnique", { configurable: true, value: async () => null });
   try {
-    const result = await getNewsEvent("event-1");
+    const result = await getNewsEvent("event-1", "user-1");
     assert.equal(result?.verificationStatus, "SOURCE_LINKED");
     assert.match(result?.verificationNote ?? "", /not independently fact-checked/);
     assert.equal(result?.supportingSources[0].sourceName, source.name);
@@ -88,8 +126,14 @@ test("source provenance, verification language and revision history are returned
     assert.equal(result?.supportingSources[0].retrievedAt, doc.retrievedAt);
     assert.deepEqual(result?.revisions.map((item: any) => item.type), ["INITIAL", "CORRECTION"]);
     assert.equal(result?.supportingEvidence[0].quote, "Net profit corrected");
+    assert.equal(result?.sourceReliability.status, "UNASSESSED");
+    assert.match(result?.explanation.whyItMatters ?? "", /reported period/);
   } finally {
     if (previous) Object.defineProperty(delegate, "findUnique", previous);
     else delete (delegate as unknown as { findUnique?: unknown }).findUnique;
+    if (previousHistory) Object.defineProperty(historyDelegate, "upsert", previousHistory);
+    else delete (historyDelegate as unknown as { upsert?: unknown }).upsert;
+    if (previousSaved) Object.defineProperty(savedDelegate, "findUnique", previousSaved);
+    else delete (savedDelegate as unknown as { findUnique?: unknown }).findUnique;
   }
 });

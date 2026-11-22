@@ -7,7 +7,7 @@ const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
 }, "Date must use YYYY-MM-DD");
 
 const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 
@@ -17,6 +17,7 @@ export const newsFilterSchema = z.object({
   category: z.nativeEnum(NewsEventType).optional(),
   region: z.string().trim().min(1).max(20).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(),
   company: z.string().trim().min(1).max(160).optional(),
+  q: z.string().trim().min(1).max(160).optional(),
   from: dateValue.optional(),
   to: dateValue.optional(),
 }).refine((value) => !value.from || !value.to || value.from <= value.to, { message: "Start date must be on or before end date", path: ["from"] });
@@ -45,6 +46,14 @@ export function buildNewsEventWhere(filters: NewsFilters): Prisma.NewsEventWhere
       },
     },
   };
+  if (filters.q) revision.AND = [
+    ...(revision.AND ? (Array.isArray(revision.AND) ? revision.AND : [revision.AND]) : []),
+    { OR: [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { summary: { contains: filters.q, mode: "insensitive" } },
+      { entities: { some: { entity: { canonicalName: { contains: filters.q, mode: "insensitive" } } } } },
+    ] },
+  ];
   if (filters.region) {
     revision.OR = [
       { entities: { some: { entity: { jurisdiction: filters.region } } } },
