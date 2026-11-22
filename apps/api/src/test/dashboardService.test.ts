@@ -27,11 +27,13 @@ test("dashboard income reads remain scoped to the authenticated user", async () 
   ];
   const originals = delegates.map(([delegate, key]) => Object.getOwnPropertyDescriptor(delegate, key));
   let incomeQuery: unknown;
+  let budgetQuery: any;
   let transactionQuery: any;
   Object.defineProperty(prisma.user, "findUnique", { configurable: true, value: async () => ({ firstName: "Test", creditScore: null }) });
-  for (const delegate of [prisma.account, prisma.investment, prisma.loan, prisma.budget, prisma.bill]) {
+  for (const delegate of [prisma.account, prisma.investment, prisma.loan, prisma.bill]) {
     Object.defineProperty(delegate, "findMany", { configurable: true, value: async () => [] });
   }
+  Object.defineProperty(prisma.budget, "findMany", { configurable: true, value: async (query: any) => { budgetQuery = query; return []; } });
   Object.defineProperty(prisma.incomeSource, "findMany", { configurable: true, value: async (query: unknown) => { incomeQuery = query; return []; } });
   Object.defineProperty(prisma.transaction, "findMany", { configurable: true, value: async (query: any) => { if (query.where.date) transactionQuery = query; return []; } });
   Object.defineProperty(prisma.monthlySnapshot, "findUnique", { configurable: true, value: async () => null });
@@ -40,6 +42,8 @@ test("dashboard income reads remain scoped to the authenticated user", async () 
     const result = await getDashboard(userId);
     assert.equal(result.overview.monthlyIncome, 0);
     assert.deepEqual(incomeQuery, { where: { userId, isActive: true } });
+    assert.deepEqual(budgetQuery.where, { userId });
+    assert.deepEqual(budgetQuery.select, { id: true, goalName: true, targetAmount: true, currentAmount: true, targetDate: true });
     assert.deepEqual(transactionQuery.where.account, { userId });
     assert.ok(transactionQuery.where.date.gte instanceof Date);
     assert.ok(transactionQuery.where.date.lt instanceof Date);

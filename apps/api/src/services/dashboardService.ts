@@ -29,7 +29,14 @@ export async function getDashboard(userId: string) {
     prisma.incomeSource.findMany({ where: { userId, isActive: true } }),
     prisma.transaction.findMany({ where: { account: { userId }, date: { gte: monthStart, lt: nextMonth } } }),
     prisma.transaction.findMany({ where: { account: { userId } }, include: { account: { select: { id: true, name: true, type: true } } }, orderBy: { date: "desc" }, take: 12 }),
-    prisma.budget.findMany({ where: { userId }, orderBy: { targetDate: "asc" } }),
+    // The finance overview only reads the legacy savings-goal fields. Keep
+    // this projection explicit so the overview remains available while the
+    // additive financial-goals migration is pending in an existing database.
+    prisma.budget.findMany({
+      where: { userId },
+      orderBy: { targetDate: "asc" },
+      select: { id: true, goalName: true, targetAmount: true, currentAmount: true, targetDate: true },
+    }),
     prisma.bill.findMany({ where: { userId }, orderBy: { dueDate: "asc" } }),
     prisma.monthlySnapshot.findUnique({ where: { userId_year_month: { userId, year: previousYear, month: previousMonth } } }),
   ]);
