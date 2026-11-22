@@ -29,8 +29,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch apps/api/src/index.ts",
-    "test:api": "tsx --test apps/api/src/test/stockLedger.test.ts apps/api/src/test/newsIngestion.test.ts apps/api/src/test/newsIntelligence.test.ts apps/api/src/test/newsApi.test.ts apps/api/src/test/financeCalculations.test.ts apps/api/src/test/dashboardService.test.ts apps/api/src/test/portfolioAnalytics.test.ts apps/api/src/test/portfolioSnapshot.test.ts apps/api/src/test/portfolioSnapshotDatabase.test.ts apps/api/src/test/goalPlanning.test.ts",
+    "test:api": "tsx --test apps/api/src/test/stockLedger.test.ts apps/api/src/test/newsIngestion.test.ts apps/api/src/test/newsIntelligence.test.ts apps/api/src/test/newsApi.test.ts apps/api/src/test/rssAdapter.test.ts apps/api/src/test/newsPulseDatabase.test.ts apps/api/src/test/newsIngestionDatabase.test.ts apps/api/src/test/financeCalculations.test.ts apps/api/src/test/dashboardService.test.ts apps/api/src/test/portfolioAnalytics.test.ts apps/api/src/test/portfolioSnapshot.test.ts apps/api/src/test/portfolioSnapshotDatabase.test.ts apps/api/src/test/goalPlanning.test.ts",
     "test:web:calculators": "tsx --test apps/web/src/test/calculatorApi.test.ts",
+    "test:web:pulse": "tsx --test apps/web/src/test/newsApi.test.ts",
     "test:web:simulation": "tsx --test apps/web/src/test/investment-simulation.test.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
