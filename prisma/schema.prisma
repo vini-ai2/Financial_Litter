@@ -7,28 +7,31 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  email            String            @unique
-  passwordHash     String
-  firstName        String
-  lastName         String
-  phone            String
-  creditScore      Int?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  accounts         Account[]
-  bills            Bill[]
-  budgets          Budget[]
-  incomeSources    IncomeSource[]
-  investments      Investment[]
-  stockTrades      StockTrade[]
-  stockPrices      StockPrice[]
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  passwordHash       String
+  firstName          String
+  lastName           String
+  phone              String
+  creditScore        Int?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  accounts           Account[]
+  bills              Bill[]
+  budgets            Budget[]
+  incomeSources      IncomeSource[]
+  investments        Investment[]
+  stockTrades        StockTrade[]
+  stockPrices        StockPrice[]
   portfolioSnapshots PortfolioSnapshot[]
-  loans            Loan[]
-  goalContributions GoalContribution[]
-  monthlySnapshots MonthlySnapshot[]
-  sessions         Session[]
-  newsPreference   NewsPreference?
+  loans              Loan[]
+  goalContributions  GoalContribution[]
+  monthlySnapshots   MonthlySnapshot[]
+  sessions           Session[]
+  newsPreference     NewsPreference?
+  newsSavedEvents    NewsSavedEvent[]
+  newsWatches        NewsWatch[]
+  newsReadHistory    NewsReadHistory[]
 }
 
 model MonthlySnapshot {
@@ -171,23 +174,23 @@ model StockPrice {
 }
 
 model PortfolioSnapshot {
-  id                            String                    @id @default(uuid())
-  userId                        String
-  capturedAt                    DateTime                  @db.Timestamp(3)
-  captureBucket                 DateTime                  @db.Timestamp(3)
-  valuationStatus               String                    @db.VarChar(16)
-  activePositionCount           Int
-  pricedPositionCount           Int
-  missingPriceCount             Int
-  stalePriceCount               Int
-  investedCostBasis             Decimal                   @db.Decimal(38, 12)
-  marketValueForPricedHoldings  Decimal                   @db.Decimal(38, 12)
-  totalMarketValue              Decimal?                  @db.Decimal(38, 12)
-  realizedPnl                   Decimal                   @db.Decimal(38, 12)
-  unrealizedPnlForPricedHoldings Decimal                  @db.Decimal(38, 12)
-  totalUnrealizedPnl            Decimal?                  @db.Decimal(38, 12)
-  user                          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  holdings                      PortfolioSnapshotHolding[]
+  id                             String                     @id @default(uuid())
+  userId                         String
+  capturedAt                     DateTime                   @db.Timestamp(3)
+  captureBucket                  DateTime                   @db.Timestamp(3)
+  valuationStatus                String                     @db.VarChar(16)
+  activePositionCount            Int
+  pricedPositionCount            Int
+  missingPriceCount              Int
+  stalePriceCount                Int
+  investedCostBasis              Decimal                    @db.Decimal(38, 12)
+  marketValueForPricedHoldings   Decimal                    @db.Decimal(38, 12)
+  totalMarketValue               Decimal?                   @db.Decimal(38, 12)
+  realizedPnl                    Decimal                    @db.Decimal(38, 12)
+  unrealizedPnlForPricedHoldings Decimal                    @db.Decimal(38, 12)
+  totalUnrealizedPnl             Decimal?                   @db.Decimal(38, 12)
+  user                           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holdings                       PortfolioSnapshotHolding[]
 
   @@unique([userId, captureBucket])
   @@unique([userId, id])
@@ -195,22 +198,22 @@ model PortfolioSnapshot {
 }
 
 model PortfolioSnapshotHolding {
-  id             String           @id @default(uuid())
-  userId         String
-  snapshotId     String
-  exchange       StockExchange
-  symbol         String           @db.VarChar(20)
-  quantity       Int
-  costBasis      Decimal          @db.Decimal(38, 12)
-  averageCost    Decimal          @db.Decimal(38, 12)
-  price          Decimal?         @db.Decimal(20, 6)
-  priceSource    String?          @db.VarChar(40)
-  priceAsOf      DateTime?        @db.Timestamp(3)
-  priceStatus    String           @db.VarChar(16)
-  marketValue    Decimal?         @db.Decimal(38, 12)
-  realizedPnl    Decimal          @db.Decimal(38, 12)
-  unrealizedPnl  Decimal?         @db.Decimal(38, 12)
-  snapshot       PortfolioSnapshot @relation(fields: [userId, snapshotId], references: [userId, id], onDelete: Cascade)
+  id            String            @id @default(uuid())
+  userId        String
+  snapshotId    String
+  exchange      StockExchange
+  symbol        String            @db.VarChar(20)
+  quantity      Int
+  costBasis     Decimal           @db.Decimal(38, 12)
+  averageCost   Decimal           @db.Decimal(38, 12)
+  price         Decimal?          @db.Decimal(20, 6)
+  priceSource   String?           @db.VarChar(40)
+  priceAsOf     DateTime?         @db.Timestamp(3)
+  priceStatus   String            @db.VarChar(16)
+  marketValue   Decimal?          @db.Decimal(38, 12)
+  realizedPnl   Decimal           @db.Decimal(38, 12)
+  unrealizedPnl Decimal?          @db.Decimal(38, 12)
+  snapshot      PortfolioSnapshot @relation(fields: [userId, snapshotId], references: [userId, id], onDelete: Cascade)
 
   @@unique([userId, snapshotId, exchange, symbol])
   @@index([userId, snapshotId])
@@ -233,49 +236,49 @@ model Bill {
 }
 
 model Budget {
-  id                       String                    @id @default(uuid())
-  userId                   String
-  goalName                 String
-  targetAmount             Decimal
-  currentAmount            Decimal                   @default(0)
-  targetDate               DateTime
-  category                 GoalCategory              @default(SAVINGS)
-  status                   GoalStatus                @default(ACTIVE)
-  startingBalance          Decimal                   @default(0) @db.Decimal(38, 12)
-  contributionFrequency    GoalContributionFrequency @default(MONTHLY)
-  plannedContributionAmount Decimal?                 @db.Decimal(38, 12)
-  linkedLoanId             String?
-  includePortfolio         Boolean                   @default(false)
-  portfolioOwnerId         String?                   @unique
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  user                     User                      @relation(fields: [userId], references: [id])
-  contributions            GoalContribution[]
+  id                        String                    @id @default(uuid())
+  userId                    String
+  goalName                  String
+  targetAmount              Decimal
+  currentAmount             Decimal                   @default(0)
+  targetDate                DateTime
+  category                  GoalCategory              @default(SAVINGS)
+  status                    GoalStatus                @default(ACTIVE)
+  startingBalance           Decimal                   @default(0) @db.Decimal(38, 12)
+  contributionFrequency     GoalContributionFrequency @default(MONTHLY)
+  plannedContributionAmount Decimal?                  @db.Decimal(38, 12)
+  linkedLoanId              String?
+  includePortfolio          Boolean                   @default(false)
+  portfolioOwnerId          String?                   @unique
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
+  user                      User                      @relation(fields: [userId], references: [id])
+  contributions             GoalContribution[]
 
-  @@index([userId])
   @@unique([userId, id])
   @@unique([userId, linkedLoanId])
+  @@index([userId])
   @@index([userId, status, targetDate])
 }
 
 model GoalContribution {
-  id                     String                   @id @default(uuid())
+  id                     String               @id @default(uuid())
   userId                 String
   budgetId               String
-  amount                 Decimal                  @db.Decimal(38, 12)
+  amount                 Decimal              @db.Decimal(38, 12)
   type                   GoalContributionType
-  effectiveAt            DateTime                 @db.Timestamp(3)
-  note                   String?                  @db.VarChar(300)
-  idempotencyKey         String                   @db.VarChar(120)
-  sourceTransactionId    String?                  @unique
-  reversesContributionId String?                  @unique
-  active                 Boolean                  @default(true)
-  reversedAt             DateTime?                @db.Timestamp(3)
-  createdAt              DateTime                 @default(now())
-  user                   User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal                   Budget                   @relation(fields: [userId, budgetId], references: [userId, id], onDelete: Cascade)
-  reverses               GoalContribution?        @relation("GoalContributionReversals", fields: [reversesContributionId], references: [id], onDelete: Restrict)
-  reversal               GoalContribution?        @relation("GoalContributionReversals")
+  effectiveAt            DateTime             @db.Timestamp(3)
+  note                   String?              @db.VarChar(300)
+  idempotencyKey         String               @db.VarChar(120)
+  sourceTransactionId    String?              @unique
+  reversesContributionId String?              @unique
+  active                 Boolean              @default(true)
+  reversedAt             DateTime?            @db.Timestamp(3)
+  createdAt              DateTime             @default(now())
+  user                   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal                   Budget               @relation(fields: [userId, budgetId], references: [userId, id], onDelete: Cascade)
+  reverses               GoalContribution?    @relation("GoalContributionReversals", fields: [reversesContributionId], references: [id], onDelete: Restrict)
+  reversal               GoalContribution?    @relation("GoalContributionReversals")
 
   @@unique([userId, idempotencyKey])
   @@index([userId, budgetId, effectiveAt])
@@ -342,9 +345,53 @@ model NewsPreference {
   userId     String          @unique
   categories NewsEventType[]
   regions    String[]        @default([])
+  companies  String[]        @default([])
+  industries String[]        @default([])
+  topics     String[]        @default([])
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NewsSavedEvent {
+  userId  String
+  eventId String
+  savedAt DateTime  @default(now())
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   NewsEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@index([userId, savedAt])
+  @@index([eventId])
+}
+
+model NewsWatch {
+  id        String        @id @default(cuid())
+  userId    String
+  kind      NewsWatchKind
+  key       String        @db.VarChar(240)
+  entityId  String?
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity    NewsEntity?   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId, createdAt])
+  @@index([entityId])
+}
+
+model NewsReadHistory {
+  userId        String
+  eventId       String
+  firstViewedAt DateTime  @default(now())
+  lastViewedAt  DateTime  @default(now())
+  viewCount     Int       @default(1)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event         NewsEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@index([userId, lastViewedAt])
+  @@index([eventId])
 }
 
 model NewsEntity {
@@ -357,6 +404,7 @@ model NewsEntity {
   identifiers    NewsEntityIdentifier[]
   mentions       NewsEntityMention[]
   eventEntities  NewsEventEntity[]
+  watches        NewsWatch[]
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
 
@@ -414,6 +462,8 @@ model NewsEvent {
   currentRevision   NewsEventRevision?  @relation("CurrentEventRevision", fields: [currentRevisionId], references: [id], onDelete: Restrict)
   documents         NewsEventDocument[]
   entities          NewsEventEntity[]
+  savedBy           NewsSavedEvent[]
+  readBy            NewsReadHistory[]
 }
 
 model NewsEventRevision {
@@ -621,4 +671,10 @@ enum NewsRevisionType {
   CORRECTION
   RETRACTION
   DEVELOPMENT
+}
+
+enum NewsWatchKind {
+  COMPANY
+  INDUSTRY
+  TOPIC
 }
