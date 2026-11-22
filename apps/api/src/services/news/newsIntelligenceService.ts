@@ -44,19 +44,23 @@ export async function processNewsDocument(document: IntelligenceDocument, reposi
     const segments = documentTextSegments(document);
     const catalog = await repository.getEntityCatalog();
     const matches = resolveEntities(segments, catalog);
-    stage = "event-extraction-classification";
+    stage = "event-classification";
     const event = extractEvent({ segments, matches, publishedAt: document.publishedAt });
     stage = "event-persistence";
     const persisted = await repository.persistIntelligence({ document, event, matches });
     return { event, matches, persisted };
   } catch (error) {
-    await repository.recordFailure({
-      sourceId: document.sourceId,
-      externalId: document.id,
-      stage,
-      message: error instanceof Error ? error.message : "News intelligence processing failed",
-      attempts: 1,
-    });
+    try {
+      await repository.recordFailure({
+        sourceId: document.sourceId,
+        externalId: document.id,
+        stage,
+        message: error instanceof Error ? error.message : "News intelligence processing failed",
+        attempts: 1,
+      });
+    } catch (recordingError) {
+      console.error(`[news intelligence] could not persist failure record for ${document.id}: ${recordingError instanceof Error ? recordingError.message : String(recordingError)}`);
+    }
     throw error;
   }
 }

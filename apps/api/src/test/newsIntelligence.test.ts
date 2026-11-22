@@ -75,16 +75,20 @@ test("all supported event classes are deterministic", () => {
     ["earnings", "Quarterly financial results report net profit and revenue"],
     ["regulatory action", "SEBI issued a show cause notice and penalty"],
     ["market/economic", "RBI changed the repo rate amid inflation"],
+    ["government securities", "Reserve Bank auction of 91-day Treasury bills and Government stock"],
     ["corporate action", "Board declared a dividend and buyback record date"],
     ["risk", "Credit downgrade after loan default and insolvency filing"],
+    ["bank regulatory responsibility", "RBI re-organisation of districts and assignment of Lead Bank Responsibility"],
   ];
   for (const [label, text] of fixtures) assert.ok(classifyEvent(text).eventType, label);
   assert.equal(classifyEvent(fixtures[0][1]).eventType, "COMPANY_DEVELOPMENT");
   assert.equal(classifyEvent(fixtures[1][1]).eventType, "EARNINGS");
   assert.equal(classifyEvent(fixtures[2][1]).eventType, "REGULATORY_ACTION");
   assert.equal(classifyEvent(fixtures[3][1]).eventType, "MARKET_ECONOMIC");
-  assert.equal(classifyEvent(fixtures[4][1]).eventType, "CORPORATE_ACTION");
-  assert.equal(classifyEvent(fixtures[5][1]).eventType, "RISK");
+  assert.equal(classifyEvent(fixtures[4][1]).eventType, "MARKET_ECONOMIC");
+  assert.equal(classifyEvent(fixtures[5][1]).eventType, "CORPORATE_ACTION");
+  assert.equal(classifyEvent(fixtures[6][1]).eventType, "RISK");
+  assert.equal(classifyEvent(fixtures[7][1]).eventType, "REGULATORY_ACTION");
 });
 
 test("classification confidence is independent of materiality", () => {
@@ -108,6 +112,13 @@ test("extraction preserves supporting source text ranges and fails closed withou
   }
   assert.ok(event.facts.some((fact) => fact.value.includes("₹12 crore")));
   assert.throws(() => extractEvent({ segments: [{ field: "title", text: "TEST FIXTURE — Acme quarterly update" }], matches: [] }), /No supported/);
+});
+
+test("RBI amendment directions classify with title evidence", () => {
+  const regulatoryTitle = "Reserve Bank of India Commercial Banks Prudential Norms Amendment Directions, 2026";
+  const amendment = extractEvent({ segments: [{ field: "title", text: regulatoryTitle }], matches: [] });
+  assert.equal(amendment.classification.eventType, "REGULATORY_ACTION");
+  assert.ok(amendment.evidence.some((item) => item.quote === regulatoryTitle));
 });
 
 test("identical event documents are linked to one event; unrelated events remain separate", async () => {
@@ -160,7 +171,7 @@ test("event processing failures are recorded with a stage and source document", 
   const repository = new MemoryIntelligenceRepository();
   await assert.rejects(processNewsDocument(document("bad-doc", "TEST FIXTURE — no classifiable event"), repository), /No supported/);
   assert.equal(repository.failures.length, 1);
-  assert.equal(repository.failures[0].stage, "event-extraction-classification");
+  assert.equal(repository.failures[0].stage, "event-classification");
 });
 
 test("revision persistence policy distinguishes duplicate documents, new events, linked records and revisions", () => {

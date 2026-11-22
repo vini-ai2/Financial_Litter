@@ -15,7 +15,7 @@ export const prismaNewsIntelligenceRepository: NewsIntelligenceRepository = {
   },
 
   async persistIntelligence({ document, event, matches }) {
-    return prisma.$transaction(async (tx) => {
+    const persist = () => prisma.$transaction(async (tx) => {
       const priorLink = await tx.newsEventDocument.findFirst({
         where: { documentId: document.id },
         include: { event: true, revision: true },
@@ -119,6 +119,13 @@ export const prismaNewsIntelligenceRepository: NewsIntelligenceRepository = {
       }
       return { eventId, revisionId, version, outcome };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 15_000, timeout: 30_000 });
+    for (let attempt = 1; ; attempt += 1) {
+      try { return await persist(); }
+      catch (error) {
+        if (!(error && typeof error === "object" && "code" in error && error.code === "P2034") || attempt >= 3) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** (attempt - 1)));
+      }
+    }
   },
 
   async recordFailure(input) {

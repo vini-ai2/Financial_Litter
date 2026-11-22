@@ -22,10 +22,10 @@ export type ExtractedEvent = {
 
 const rules: Array<{ type: NewsEventType; weight: number; terms: RegExp[] }> = [
   { type: "RISK", weight: 7, terms: [/default|insolvenc|bankrupt|fraud|cyber.?attack|downgrad|credit.?watch|litigation|recall|safety incident|fire at/i, /loss of|risk of|investigation into/i] },
-  { type: "REGULATORY_ACTION", weight: 6, terms: [/(?:sebi|rbi|sec\b|reserve bank|regulator).{0,50}(?:issued|imposed|ordered|approved|restricted|penalized|banned|investigat|show.?cause)/i, /show.?cause|penalt|fine imposed|sanction|ban on|approval granted|order passed|compliance action|investigation by/i] },
+  { type: "REGULATORY_ACTION", weight: 6, terms: [/(?:sebi|rbi|sec\b|reserve bank|regulator).{0,50}(?:issues?|issued|imposed|ordered|approved|restricted|penalized|banned|investigat|show.?cause)/i, /show.?cause|penalt|fine imposed|sanction|ban on|approval granted|order passed|compliance action|investigation by|amendment directions?|lead bank responsibility|compounding of contraventions|under FEMA|delegation of powers/i] },
   { type: "EARNINGS", weight: 5, terms: [/quarterly results|financial results|revenue|net profit|profit after tax|\bpat\b|\bebitda\b|earnings|loss for the quarter|unaudited results/i] },
   { type: "CORPORATE_ACTION", weight: 5, terms: [/dividend|buy.?back|stock split|share split|bonus issue|rights issue|merger|amalgamation|acquisition|demerger|delisting|record date/i] },
-  { type: "MARKET_ECONOMIC", weight: 5, terms: [/repo rate|interest rate|inflation|gross domestic product|\bgdp\b|\bcpi\b|\bwpi\b|market index|benchmark|currency|forex|monetary policy|fiscal deficit/i] },
+  { type: "MARKET_ECONOMIC", weight: 5, terms: [/repo rate|interest rate|inflation|gross domestic product|\bgdp\b|\bcpi\b|\bwpi\b|market index|benchmark|currency|forex|monetary policy|fiscal deficit|financial stability|treasury bills?|government securities|government stock|state development loans?|securities auction|variable rate repo|\bvrr\b|liquidity adjustment facility|\blaf\b|priority sector lending|central bank digital currency|\bcbdc\b|statistical supplement/i] },
   { type: "COMPANY_DEVELOPMENT", weight: 2, terms: [/board meeting|appointed|resigned|new contract|order worth|project award|commenced operations|capacity|expansion|agreement signed|production started/i] },
 ];
 
